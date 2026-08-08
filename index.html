@@ -232,6 +232,15 @@ td.num,th.num{text-align:right;}
 .tag.fam-Moviles{background:var(--accent-soft);color:var(--accent);}
 .pdv-name{font-weight:600;}
 .sub-meta{color:var(--muted);font-size:11.5px;}
+.cod-oracle{
+  display:inline-block;margin-left:4px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:10.5px;font-weight:600;letter-spacing:0.02em;
+  color:var(--accent);
+  background:var(--accent-soft);
+  padding:1px 6px;border-radius:5px;
+  vertical-align:middle;
+}
 
 .empty-state{
   border:1px dashed var(--line);border-radius:var(--radius);
@@ -539,14 +548,16 @@ footer.note b{color:var(--ink);}
       }
       g = groupsMap.get(key);
       g.qty += q;
-      // aggregate SKU breakdown by producto (sum across PDVs/rows)
-      g.items.set(p.producto, (g.items.get(p.producto)||0) + q);
+      // aggregate SKU breakdown by producto (sum across PDVs/rows), keeping the Oracle code
+      var it = g.items.get(p.producto);
+      if(it) it.qty += q;
+      else g.items.set(p.producto, {qty:q, cod:p.codOracle||''});
     }, {depto:true,canal:true,pdv:true,modelo:true});
 
     var groups = Array.from(groupsMap.values());
     groups.forEach(function(g){
       g.items = Array.from(g.items.entries())
-        .map(function(e){ return {producto:e[0], qty:e[1]}; })
+        .map(function(e){ return {producto:e[0], qty:e[1].qty, cod:e[1].cod}; })
         .sort(function(a,b){ return b.qty - a.qty; });
     });
     groups.sort(function(a,b){ return b.qty - a.qty; });
@@ -571,22 +582,33 @@ footer.note b{color:var(--ink);}
       html += '<tr><td><div class="pdv-name">'+escapeHtml(g.label)+tagHtml+'</div><div class="sub-meta">'+escapeHtml(g.sub||'')+'</div></td>'+
               '<td class="num"><div class="meter-cell"><span class="qty tabular" style="color:var(--'+tier+')">'+fmt(g.qty)+'</span>'+
               '<div class="meter-track"><div class="meter-fill" style="width:'+pct+'%;background:var(--'+tier+')"></div></div></div></td></tr>';
-      if(g.items.length>1){
-        g.items.forEach(function(it){
-          var lbl = byModelo ? it.producto : it.producto;
-          html += '<tr><td style="padding-left:28px;"><span class="sub-meta">'+escapeHtml(lbl)+'</span></td><td class="num"><span class="sub-meta tabular">'+fmt(it.qty)+'</span></td></tr>';
-        });
-      }
+      g.items.forEach(function(it){
+        var codHtml = it.cod ? ' <span class="cod-oracle">'+escapeHtml(it.cod)+'</span>' : '';
+        html += '<tr><td style="padding-left:28px;"><span class="sub-meta">'+escapeHtml(it.producto)+'</span>'+codHtml+'</td><td class="num"><span class="sub-meta tabular">'+fmt(it.qty)+'</span></td></tr>';
+      });
     });
     html += '</tbody></table>';
     area.innerHTML = '<div class="table-scroll">'+html+'</div>';
 
+    // Detail lines for the WhatsApp message:
+    //  - if a modelo is selected -> its SKU breakdown (productos) aggregated over the scope
+    //  - otherwise -> the group rows (modelos o PDVs) con su total
+    var shareItems;
+    if(state.modelo){
+      var skuMap = new Map();
+      groups.forEach(function(g){ g.items.forEach(function(it){ skuMap.set(it.producto, (skuMap.get(it.producto)||0)+it.qty); }); });
+      shareItems = Array.from(skuMap.entries())
+        .map(function(e){ return {label:e[0], qty:e[1]}; })
+        .sort(function(a,b){ return b.qty - a.qty; });
+    } else {
+      shareItems = groups.map(function(g){ return {label:g.label, qty:g.qty}; });
+    }
+
     lastShare = {
-      subject: scopeTitle(),
-      context: ctxParts,
-      totalQty: totalQty,
-      unitWord: unitWord,
-      groups: groups.map(function(g){ return {label:g.label, qty:g.qty}; })
+      modelo: state.modelo,
+      pdvName: state.pdvIdx!=='' ? pdvs[+state.pdvIdx].pdv : '',
+      scopeTitle: scopeTitle(),
+      items: shareItems
     };
     shareBtn.disabled = false;
   }
@@ -596,20 +618,25 @@ footer.note b{color:var(--ink);}
   // ---------- share to WhatsApp ----------
   shareBtn.addEventListener('click', function(){
     if(!lastShare) return;
-    var MAX_LINES = 25;
-    var lines = lastShare.groups.slice(0, MAX_LINES).map(function(g){
-      return '• '+g.label+': '+fmt(g.qty)+' u.';
-    });
-    var extra = lastShare.groups.length - lines.length;
+    var MAX_LINES = 40;
+    var ls = lastShare;
 
-    var msg = '';
-    msg += '📦 *Stock Honor* — '+lastShare.subject+'\n';
-    if(lastShare.context.length) msg += lastShare.context.join(' · ')+'\n';
-    msg += 'Corte al '+SNAPSHOT_LABEL+'\n';
-    msg += 'Total: '+fmt(lastShare.totalQty)+' u. en '+lastShare.groups.length+' '+lastShare.unitWord+'\n\n';
+    // Header: Modelo y/o Punto de Venta (lo que esté seleccionado)
+    var header = [];
+    if(ls.modelo) header.push('Modelo: *'+ls.modelo+'*');
+    if(ls.pdvName) header.push('Punto de Venta: *'+ls.pdvName+'*');
+    if(header.length===0) header.push('*'+ls.scopeTitle+'*');
+    header[0] = '📦 ' + header[0];
+
+    var lines = ls.items.slice(0, MAX_LINES).map(function(it){
+      return it.label+'  -->'+fmt(it.qty);
+    });
+    var extra = ls.items.length - lines.length;
+
+    var msg = header.join('\n')+'\n\n';
+    msg += 'Stock al '+SNAPSHOT_LABEL+'\n\n';
     msg += lines.join('\n');
     if(extra > 0) msg += '\n… y '+extra+' más';
-    msg += '\n\nVer detalle: '+ARTIFACT_URL;
 
     window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank', 'noopener');
   });
