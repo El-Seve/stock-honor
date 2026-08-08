@@ -1,0 +1,311 @@
+</script>
+<script>
+(function(){
+  "use strict";
+  var RAW = JSON.parse(document.getElementById('stock-data').textContent);
+  var products = RAW.products, pdvs = RAW.pdvs, stock = RAW.stock;
+
+  var ARTIFACT_URL = 'https://el-seve.github.io/stock-honor/';
+
+  // ---------- date ----------
+  var SNAPSHOT_LABEL = '—';
+  (function(){
+    var periodo = String(RAW.periodo), dia = RAW.dia;
+    var year = periodo.slice(0,4), month = periodo.slice(4,6);
+    var d = String(dia).padStart(2,'0');
+    SNAPSHOT_LABEL = d+'/'+month+'/'+year;
+    document.getElementById('snapshotDate').textContent = SNAPSHOT_LABEL;
+  })();
+
+  // ---------- state ----------
+  var state = {
+    familia: new Set(['Moviles','Accesorios','Otros']),
+    depto: '',
+    canal: '',
+    pdvIdx: '',      // '' = todos, else numeric index into pdvs
+    modelo: ''       // '' = todos, else modelo name
+  };
+
+  // ---------- helpers ----------
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function fmt(n){ return n.toLocaleString('es-PE'); }
+  function tierOf(q){ return q<=2 ? 'stock-low' : (q<=9 ? 'stock-mid' : 'stock-high'); }
+
+  // Iterate stock rows applying familia + selected upper filters (controlled by opts)
+  function eachRow(cb, opts){
+    opts = opts || {};
+    var pdvIdxNum = state.pdvIdx==='' ? -1 : +state.pdvIdx;
+    for(var i=0;i<stock.length;i++){
+      var row = stock[i];
+      var p = products[row[0]], s = pdvs[row[1]];
+      if(!state.familia.has(p.familia)) continue;
+      if(opts.depto && state.depto && s.departamento!==state.depto) continue;
+      if(opts.canal && state.canal && s.canal!==state.canal) continue;
+      if(opts.pdv && pdvIdxNum!==-1 && row[1]!==pdvIdxNum) continue;
+      if(opts.modelo && state.modelo && p.modelo!==state.modelo) continue;
+      cb(row, p, s);
+    }
+  }
+
+  function sortEs(arr){ return arr.sort(function(a,b){return String(a).localeCompare(String(b),'es');}); }
+
+  // ---------- cascade dropdowns ----------
+  var deptoSel = document.getElementById('deptoFilter');
+  var canalSel = document.getElementById('canalFilter');
+  var pdvSel   = document.getElementById('pdvFilter');
+  var modeloSel= document.getElementById('modeloFilter');
+
+  function distinctDepto(){
+    var set=new Set(); eachRow(function(r,p,s){ if(s.departamento) set.add(s.departamento); }, {});
+    return sortEs(Array.from(set));
+  }
+  function distinctCanal(){
+    var set=new Set(); eachRow(function(r,p,s){ if(s.canal) set.add(s.canal); }, {depto:true});
+    return sortEs(Array.from(set));
+  }
+  function distinctPdv(){
+    var set=new Set(); eachRow(function(r,p,s){ set.add(r[1]); }, {depto:true,canal:true});
+    var arr = Array.from(set).map(function(idx){ return {idx:idx, label:pdvs[idx].pdv}; });
+    arr.sort(function(a,b){ return a.label.localeCompare(b.label,'es'); });
+    return arr;
+  }
+  function distinctModelo(){
+    var set=new Set(); eachRow(function(r,p,s){ if(p.modelo) set.add(p.modelo); }, {depto:true,canal:true,pdv:true});
+    return sortEs(Array.from(set));
+  }
+
+  function fillSelect(sel, values, selected){
+    var html = '<option value="">Todos</option>';
+    for(var i=0;i<values.length;i++){
+      var v = values[i];
+      html += '<option value="'+escapeHtml(v)+'"'+(v===selected?' selected':'')+'>'+escapeHtml(v)+'</option>';
+    }
+    sel.innerHTML = html;
+    sel.classList.toggle('set', !!selected);
+  }
+  function fillPdvSelect(sel, opts, selectedIdx){
+    var html = '<option value="">Todos</option>';
+    for(var i=0;i<opts.length;i++){
+      var o = opts[i];
+      html += '<option value="'+o.idx+'"'+(String(o.idx)===String(selectedIdx)?' selected':'')+'>'+escapeHtml(o.label)+'</option>';
+    }
+    sel.innerHTML = html;
+    sel.classList.toggle('set', selectedIdx!=='');
+  }
+
+  // Rebuild all cascade selects top-down, dropping selections that are no longer valid.
+  function refreshCascade(){
+    var deptos = distinctDepto();
+    if(state.depto && deptos.indexOf(state.depto)===-1){ state.depto=''; state.canal=''; state.pdvIdx=''; state.modelo=''; }
+    fillSelect(deptoSel, deptos, state.depto);
+
+    var canales = distinctCanal();
+    if(state.canal && canales.indexOf(state.canal)===-1){ state.canal=''; state.pdvIdx=''; state.modelo=''; }
+    fillSelect(canalSel, canales, state.canal);
+
+    var pdvOpts = distinctPdv();
+    if(state.pdvIdx!=='' && !pdvOpts.some(function(o){return String(o.idx)===String(state.pdvIdx);})){ state.pdvIdx=''; state.modelo=''; }
+    fillPdvSelect(pdvSel, pdvOpts, state.pdvIdx);
+
+    var modelos = distinctModelo();
+    if(state.modelo && modelos.indexOf(state.modelo)===-1){ state.modelo=''; }
+    fillSelect(modeloSel, modelos, state.modelo);
+  }
+
+  deptoSel.addEventListener('change', function(e){
+    state.depto = e.target.value; state.canal=''; state.pdvIdx=''; state.modelo='';
+    refreshCascade(); update();
+  });
+  canalSel.addEventListener('change', function(e){
+    state.canal = e.target.value; state.pdvIdx=''; state.modelo='';
+    refreshCascade(); update();
+  });
+  pdvSel.addEventListener('change', function(e){
+    state.pdvIdx = e.target.value; state.modelo='';
+    refreshCascade(); update();
+  });
+  modeloSel.addEventListener('change', function(e){
+    state.modelo = e.target.value;
+    refreshCascade(); update();
+  });
+
+  // ---------- familia chips ----------
+  var famChipsEl = document.getElementById('famChips');
+  ['Moviles','Accesorios','Otros'].forEach(function(fam){
+    var b = document.createElement('button');
+    b.type='button'; b.className='chip active'; b.textContent = fam==='Moviles' ? 'Smartphones' : fam;
+    b.dataset.fam = fam;
+    b.addEventListener('click', function(){
+      if(state.familia.has(fam)){
+        if(state.familia.size===1) return; // keep at least one
+        state.familia.delete(fam); b.classList.remove('active');
+      } else {
+        state.familia.add(fam); b.classList.add('active');
+      }
+      refreshCascade(); update();
+    });
+    famChipsEl.appendChild(b);
+  });
+
+  document.getElementById('resetFilters').addEventListener('click', function(){
+    state.familia = new Set(['Moviles','Accesorios','Otros']);
+    state.depto=''; state.canal=''; state.pdvIdx=''; state.modelo='';
+    famChipsEl.querySelectorAll('.chip').forEach(function(c){c.classList.add('active');});
+    refreshCascade(); update();
+  });
+
+  // ---------- stats ----------
+  function renderStats(){
+    var totalQty=0, modeloSet=new Set(), pdvSet=new Set();
+    eachRow(function(row,p,s){
+      totalQty += row[2]; modeloSet.add(p.modelo); pdvSet.add(row[1]);
+    }, {depto:true,canal:true,pdv:true,modelo:true});
+    var cards = [
+      {num: fmt(totalQty), label:'Unidades disponibles'},
+      {num: fmt(modeloSet.size), label:'Modelos con stock'},
+      {num: fmt(pdvSet.size), label:'Puntos de venta con stock'}
+    ];
+    var el = document.getElementById('statsRow');
+    el.innerHTML='';
+    cards.forEach(function(c){
+      var d=document.createElement('div'); d.className='stat';
+      d.innerHTML='<div class="num tabular">'+c.num+'</div><div class="label">'+c.label+'</div>';
+      el.appendChild(d);
+    });
+  }
+
+  // ---------- results ----------
+  var lastShare = null;
+  var shareBtn = document.getElementById('shareBtn');
+
+  function scopeTitle(){
+    if(state.modelo) return state.modelo;
+    if(state.pdvIdx!=='') return pdvs[+state.pdvIdx].pdv;
+    if(state.canal) return (state.depto||'Todos los departamentos')+' · '+state.canal;
+    if(state.depto) return state.depto;
+    return 'Todos los puntos de venta';
+  }
+
+  // context lines that are NOT already the subject
+  function scopeContext(){
+    var ctx=[];
+    if(state.modelo){
+      if(state.depto) ctx.push(state.depto);
+      if(state.canal) ctx.push(state.canal);
+      if(state.pdvIdx!=='') ctx.push(pdvs[+state.pdvIdx].pdv);
+    } else if(state.pdvIdx!==''){
+      var s=pdvs[+state.pdvIdx];
+      ctx.push(s.ubicacion); if(s.departamento) ctx.push(s.departamento); if(s.canal) ctx.push(s.canal);
+    }
+    if(state.familia.size < 3){
+      ctx.push('Familia: '+Array.from(state.familia).map(function(f){return f==='Moviles'?'Smartphones':f;}).join(', '));
+    }
+    return ctx;
+  }
+
+  function renderResults(){
+    var titleEl = document.getElementById('resultsTitle');
+    var countEl = document.getElementById('resultsCount');
+    var area = document.getElementById('resultsArea');
+
+    var byModelo = !state.modelo; // if no modelo selected, group by modelo; else group by PDV
+    var groupsMap = new Map();
+    var totalQty = 0;
+
+    eachRow(function(row, p, s){
+      var q = row[2];
+      totalQty += q;
+      var key, g;
+      if(byModelo){
+        key = p.modelo;
+        if(!groupsMap.has(key)) groupsMap.set(key, {label:p.modelo, sub:p.marca, familia:p.familia, qty:0, items:new Map()});
+      } else {
+        key = row[1]; // sIdx
+        if(!groupsMap.has(key)) groupsMap.set(key, {label:s.pdv, sub:s.ubicacion+' · '+s.departamento+' · '+s.canal, familia:null, qty:0, items:new Map()});
+      }
+      g = groupsMap.get(key);
+      g.qty += q;
+      // aggregate SKU breakdown by producto (sum across PDVs/rows)
+      g.items.set(p.producto, (g.items.get(p.producto)||0) + q);
+    }, {depto:true,canal:true,pdv:true,modelo:true});
+
+    var groups = Array.from(groupsMap.values());
+    groups.forEach(function(g){
+      g.items = Array.from(g.items.entries())
+        .map(function(e){ return {producto:e[0], qty:e[1]}; })
+        .sort(function(a,b){ return b.qty - a.qty; });
+    });
+    groups.sort(function(a,b){ return b.qty - a.qty; });
+
+    titleEl.textContent = scopeTitle();
+    var ctxParts = scopeContext();
+    var unitWord = byModelo ? ('modelo'+(groups.length===1?'':'s')) : ('punto'+(groups.length===1?'':'s')+' de venta');
+    countEl.textContent = fmt(totalQty)+' u. en '+groups.length+' '+unitWord + (ctxParts.length?(' · '+ctxParts.join(' · ')):'');
+
+    if(groups.length===0){
+      area.innerHTML = '<div class="empty-state"><div class="big">Sin stock disponible</div>No hay unidades con los filtros seleccionados. Prueba ampliando la selecci&oacute;n.</div>';
+      lastShare=null; shareBtn.disabled=true; return;
+    }
+
+    var maxQty = groups.reduce(function(m,g){return Math.max(m,g.qty);},1);
+    var colHead = byModelo ? 'Modelo' : 'Punto de venta';
+    var html = '<table><thead><tr><th>'+colHead+'</th><th class="num">Stock</th></tr></thead><tbody>';
+    groups.forEach(function(g){
+      var tier = tierOf(g.qty);
+      var pct = Math.max(6, Math.round(g.qty/maxQty*100));
+      var tagHtml = (byModelo && g.familia) ? ' <span class="tag fam-'+g.familia+'">'+escapeHtml(g.familia==='Moviles'?'Smartphone':g.familia)+'</span>' : '';
+      html += '<tr><td><div class="pdv-name">'+escapeHtml(g.label)+tagHtml+'</div><div class="sub-meta">'+escapeHtml(g.sub||'')+'</div></td>'+
+              '<td class="num"><div class="meter-cell"><span class="qty tabular" style="color:var(--'+tier+')">'+fmt(g.qty)+'</span>'+
+              '<div class="meter-track"><div class="meter-fill" style="width:'+pct+'%;background:var(--'+tier+')"></div></div></div></td></tr>';
+      if(g.items.length>1){
+        g.items.forEach(function(it){
+          var lbl = byModelo ? it.producto : it.producto;
+          html += '<tr><td style="padding-left:28px;"><span class="sub-meta">'+escapeHtml(lbl)+'</span></td><td class="num"><span class="sub-meta tabular">'+fmt(it.qty)+'</span></td></tr>';
+        });
+      }
+    });
+    html += '</tbody></table>';
+    area.innerHTML = '<div class="table-scroll">'+html+'</div>';
+
+    lastShare = {
+      subject: scopeTitle(),
+      context: ctxParts,
+      totalQty: totalQty,
+      unitWord: unitWord,
+      groups: groups.map(function(g){ return {label:g.label, qty:g.qty}; })
+    };
+    shareBtn.disabled = false;
+  }
+
+  function update(){ renderStats(); renderResults(); }
+
+  // ---------- share to WhatsApp ----------
+  shareBtn.addEventListener('click', function(){
+    if(!lastShare) return;
+    var MAX_LINES = 25;
+    var lines = lastShare.groups.slice(0, MAX_LINES).map(function(g){
+      return '• '+g.label+': '+fmt(g.qty)+' u.';
+    });
+    var extra = lastShare.groups.length - lines.length;
+
+    var msg = '';
+    msg += '📦 *Stock Honor* — '+lastShare.subject+'\n';
+    if(lastShare.context.length) msg += lastShare.context.join(' · ')+'\n';
+    msg += 'Corte al '+SNAPSHOT_LABEL+'\n';
+    msg += 'Total: '+fmt(lastShare.totalQty)+' u. en '+lastShare.groups.length+' '+lastShare.unitWord+'\n\n';
+    msg += lines.join('\n');
+    if(extra > 0) msg += '\n… y '+extra+' más';
+    msg += '\n\nVer detalle: '+ARTIFACT_URL;
+
+    window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank', 'noopener');
+  });
+
+  // ---------- init ----------
+  refreshCascade();
+  update();
+})();
+</script>

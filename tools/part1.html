@@ -1,0 +1,299 @@
+<title>Stock Honor por Modelo y Punto de Venta</title>
+<style>
+:root{
+  --bg:#f2f4f1;
+  --surface:#ffffff;
+  --surface-2:#eaece8;
+  --ink:#1b211f;
+  --muted:#5c6864;
+  --line:#dde3df;
+  --accent:#0e7c6b;
+  --accent-ink:#ffffff;
+  --accent-soft:#e1f2ee;
+  --stock-high:#1e8e5a;
+  --stock-mid:#b8790f;
+  --stock-low:#b23b3b;
+  --focus:#0e7c6b;
+  --radius:10px;
+  --shadow:0 1px 2px rgba(20,30,27,0.06), 0 4px 16px rgba(20,30,27,0.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#12716200;
+    --bg:#141816;
+    --surface:#1c2220;
+    --surface-2:#232a27;
+    --ink:#eaeeea;
+    --muted:#93a19c;
+    --line:#2b332f;
+    --accent:#39cbab;
+    --accent-ink:#0b1a17;
+    --accent-soft:#1a2f2a;
+    --stock-high:#4cbf85;
+    --stock-mid:#dba13a;
+    --stock-low:#e2685f;
+    --shadow:0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141816;
+  --surface:#1c2220;
+  --surface-2:#232a27;
+  --ink:#eaeeea;
+  --muted:#93a19c;
+  --line:#2b332f;
+  --accent:#39cbab;
+  --accent-ink:#0b1a17;
+  --accent-soft:#1a2f2a;
+  --stock-high:#4cbf85;
+  --stock-mid:#dba13a;
+  --stock-low:#e2685f;
+  --shadow:0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+}
+:root[data-theme="light"]{
+  --bg:#f2f4f1;
+  --surface:#ffffff;
+  --surface-2:#eaece8;
+  --ink:#1b211f;
+  --muted:#5c6864;
+  --line:#dde3df;
+  --accent:#0e7c6b;
+  --accent-ink:#ffffff;
+  --accent-soft:#e1f2ee;
+  --stock-high:#1e8e5a;
+  --stock-mid:#b8790f;
+  --stock-low:#b23b3b;
+  --shadow:0 1px 2px rgba(20,30,27,0.06), 0 4px 16px rgba(20,30,27,0.05);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:14.5px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px;}
+.tabular{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+
+/* Header */
+header.top{
+  display:flex;flex-wrap:wrap;gap:16px;
+  align-items:flex-end;justify-content:space-between;
+  margin-bottom:22px;
+}
+.title-block h1{
+  margin:0 0 4px;
+  font-size:22px;
+  font-weight:700;
+  letter-spacing:-0.01em;
+  text-wrap:balance;
+}
+.title-block .eyebrow{
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  font-size:11px;
+  font-weight:700;
+  color:var(--accent);
+  margin-bottom:6px;
+}
+.title-block .sub{color:var(--muted);font-size:13px;}
+.snapshot-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:100px;
+  padding:6px 12px;
+  font-size:12.5px;
+  color:var(--muted);
+  white-space:nowrap;
+}
+.snapshot-pill b{color:var(--ink);font-weight:600;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none;}
+
+/* Stat cards */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:12px;
+  margin-bottom:22px;
+}
+.stat{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:14px 16px;
+  box-shadow:var(--shadow);
+}
+.stat .num{font-size:24px;font-weight:700;letter-spacing:-0.01em;}
+.stat .label{color:var(--muted);font-size:12px;margin-top:2px;}
+
+/* Familia chips row */
+.fam-row{
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  margin-bottom:14px;
+}
+.fam-row .fam-label{
+  font-size:11px;text-transform:uppercase;letter-spacing:0.06em;
+  font-weight:700;color:var(--muted);margin-right:2px;
+}
+.chip-group{display:inline-flex;gap:6px;flex-wrap:wrap;}
+.chip{
+  border:1px solid var(--line);
+  background:var(--surface);
+  color:var(--muted);
+  font-size:12.5px;font-weight:600;
+  padding:6px 11px;border-radius:100px;cursor:pointer;
+  user-select:none;
+}
+.chip.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+.reset{
+  font-size:12.5px;color:var(--muted);background:none;border:none;
+  cursor:pointer;text-decoration:underline;padding:6px 4px;margin-left:auto;
+}
+
+/* Cascade */
+.cascade{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:12px;
+  margin-bottom:20px;
+}
+.cascade .field{display:flex;flex-direction:column;gap:5px;}
+.cascade label{
+  font-size:11px;text-transform:uppercase;letter-spacing:0.06em;
+  font-weight:700;color:var(--muted);
+  display:flex;align-items:center;gap:6px;
+}
+.cascade label .step{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:16px;height:16px;border-radius:50%;
+  background:var(--accent-soft);color:var(--accent);
+  font-size:10px;font-weight:700;flex:none;
+}
+.cascade select{
+  width:100%;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  border-radius:9px;padding:9px 12px;font-size:13.5px;font-weight:600;
+  cursor:pointer;
+}
+.cascade select:focus{outline:2px solid var(--focus);outline-offset:1px;}
+.cascade select.set{border-color:var(--accent);}
+
+/* Results header */
+.results-head{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between;
+  margin:22px 0 10px;
+}
+.results-head h2{font-size:16px;margin:0;letter-spacing:-0.005em;text-wrap:balance;}
+.results-head .count{color:var(--muted);font-size:12.5px;}
+.export-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer;
+}
+.export-btn:hover{border-color:#25D366;color:#128C4A;}
+.export-btn:disabled{opacity:0.45;cursor:default;}
+.export-btn:disabled:hover{border-color:var(--line);color:var(--ink);}
+
+/* Table */
+.table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px;}
+thead th{
+  position:sticky;top:0;background:var(--surface-2);
+  text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;
+  color:var(--muted);font-weight:700;
+  padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;
+}
+thead th:hover{color:var(--ink);}
+thead th.sorted{color:var(--accent);}
+thead th .arrow{font-size:9px;margin-left:3px;}
+tbody td{padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--accent-soft);}
+td.num,th.num{text-align:right;}
+.meter-cell{display:flex;align-items:center;gap:8px;justify-content:flex-end;}
+.meter-track{width:56px;height:6px;border-radius:4px;background:var(--surface-2);overflow:hidden;flex:none;}
+.meter-fill{height:100%;border-radius:4px;}
+.qty{font-weight:700;min-width:34px;text-align:right;}
+.tag{
+  display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;
+  background:var(--surface-2);color:var(--muted);
+}
+.tag.fam-Moviles{background:var(--accent-soft);color:var(--accent);}
+.pdv-name{font-weight:600;}
+.sub-meta{color:var(--muted);font-size:11.5px;}
+
+.empty-state{
+  border:1px dashed var(--line);border-radius:var(--radius);
+  padding:48px 20px;text-align:center;color:var(--muted);font-size:13.5px;
+}
+.empty-state .big{font-size:15px;color:var(--ink);font-weight:600;margin-bottom:4px;}
+
+footer.note{
+  margin-top:34px;padding-top:16px;border-top:1px solid var(--line);
+  color:var(--muted);font-size:12px;line-height:1.6;
+}
+footer.note b{color:var(--ink);}
+
+@media (max-width:640px){
+  .wrap{padding:18px 14px 40px;}
+  header.top{align-items:flex-start;}
+  .stats{grid-template-columns:1fr 1fr;}
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="title-block">
+      <div class="eyebrow">Inventario &middot; Base Stocks</div>
+      <h1>Stock Honor por modelo y punto de venta</h1>
+      <div class="sub">Smartphones y accesorios Honor &middot; filtra en cascada y comparte por WhatsApp</div>
+    </div>
+    <div class="snapshot-pill"><span class="dot"></span>Corte al <b id="snapshotDate">&mdash;</b></div>
+  </header>
+
+  <div class="stats" id="statsRow"></div>
+
+  <div class="fam-row">
+    <span class="fam-label">Familia</span>
+    <div class="chip-group" id="famChips"></div>
+    <button type="button" class="reset" id="resetFilters">Limpiar selecci&oacute;n</button>
+  </div>
+
+  <div class="cascade" id="cascade">
+    <div class="field">
+      <label for="deptoFilter"><span class="step">1</span> Departamento</label>
+      <select id="deptoFilter"><option value="">Todos</option></select>
+    </div>
+    <div class="field">
+      <label for="canalFilter"><span class="step">2</span> Canal</label>
+      <select id="canalFilter"><option value="">Todos</option></select>
+    </div>
+    <div class="field">
+      <label for="pdvFilter"><span class="step">3</span> Punto de venta</label>
+      <select id="pdvFilter"><option value="">Todos</option></select>
+    </div>
+    <div class="field">
+      <label for="modeloFilter"><span class="step">4</span> Modelo</label>
+      <select id="modeloFilter"><option value="">Todos</option></select>
+    </div>
+  </div>
+
+  <div class="results-head">
+    <h2 id="resultsTitle">Stock Honor &mdash; todos los puntos de venta</h2>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span class="count" id="resultsCount"></span>
+      <button type="button" class="export-btn" id="shareBtn" disabled>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="#25D366" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.29-1.39a9.9 9.9 0 0 0 4.7 1.2h.01c5.46 0 9.9-4.45 9.9-9.9 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm5.8 14.1c-.24.68-1.4 1.32-1.93 1.37-.5.05-.98.25-3.3-.68-2.8-1.12-4.62-3.98-4.76-4.16-.14-.19-1.14-1.52-1.14-2.9 0-1.37.72-2.04.97-2.32.25-.28.55-.34.73-.34.19 0 .37 0 .53.01.17.01.4-.06.62.48.24.58.81 2 .88 2.15.07.14.12.31.02.5-.1.19-.15.31-.29.48-.15.17-.31.38-.44.51-.15.15-.3.31-.13.6.17.29.75 1.25 1.62 2.02 1.12.99 2.06 1.31 2.35 1.46.29.15.46.12.63-.07.17-.19.72-.85.92-1.14.19-.29.38-.24.63-.14.26.1 1.65.78 1.93.92.29.14.48.21.55.33.07.12.07.68-.17 1.36z"/></svg>
+        Compartir en WhatsApp
+      </button>
+    </div>
+  </div>
+
+  <div id="resultsArea"></div>
+</div>
+
+<script id="stock-data" type="application/json">
