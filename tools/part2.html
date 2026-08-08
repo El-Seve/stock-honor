@@ -274,9 +274,11 @@
     // Detail lines for the WhatsApp message:
     //  - if a modelo is selected -> its SKU breakdown (productos) aggregated over the scope
     //  - otherwise -> the group rows (modelos o PDVs) con su total
+    // Con un modelo o un PDV específico, el mensaje baja a nivel producto (SKU)
+    // con su código Oracle. En vistas amplias (sin PDV ni modelo) lista los
+    // modelos, que no tienen un código Oracle único por fila.
     var shareItems;
-    if(state.modelo){
-      // productos (SKU) del modelo, agregados sobre el ámbito, con su código Oracle
+    if(state.modelo || state.pdvIdx!==''){
       var skuMap = new Map();
       groups.forEach(function(g){ g.items.forEach(function(it){
         var e = skuMap.get(it.producto);
@@ -286,7 +288,6 @@
         .map(function(e){ return {label:e[0], qty:e[1].qty, cod:e[1].cod}; })
         .sort(function(a,b){ return b.qty - a.qty; });
     } else {
-      // grupos (modelos o PDVs): no hay un código Oracle único por fila
       shareItems = groups.map(function(g){ return {label:g.label, qty:g.qty, cod:''}; });
     }
 
