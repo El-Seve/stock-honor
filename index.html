@@ -595,13 +595,18 @@ footer.note b{color:var(--ink);}
     //  - otherwise -> the group rows (modelos o PDVs) con su total
     var shareItems;
     if(state.modelo){
+      // productos (SKU) del modelo, agregados sobre el ámbito, con su código Oracle
       var skuMap = new Map();
-      groups.forEach(function(g){ g.items.forEach(function(it){ skuMap.set(it.producto, (skuMap.get(it.producto)||0)+it.qty); }); });
+      groups.forEach(function(g){ g.items.forEach(function(it){
+        var e = skuMap.get(it.producto);
+        if(e) e.qty += it.qty; else skuMap.set(it.producto, {qty:it.qty, cod:it.cod||''});
+      }); });
       shareItems = Array.from(skuMap.entries())
-        .map(function(e){ return {label:e[0], qty:e[1]}; })
+        .map(function(e){ return {label:e[0], qty:e[1].qty, cod:e[1].cod}; })
         .sort(function(a,b){ return b.qty - a.qty; });
     } else {
-      shareItems = groups.map(function(g){ return {label:g.label, qty:g.qty}; });
+      // grupos (modelos o PDVs): no hay un código Oracle único por fila
+      shareItems = groups.map(function(g){ return {label:g.label, qty:g.qty, cod:''}; });
     }
 
     lastShare = {
@@ -629,7 +634,8 @@ footer.note b{color:var(--ink);}
     header[0] = '📦 ' + header[0];
 
     var lines = ls.items.slice(0, MAX_LINES).map(function(it){
-      return it.label+'  -->'+fmt(it.qty);
+      var code = it.cod ? ' ['+it.cod+']' : '';
+      return it.label+code+'  -->'+fmt(it.qty);
     });
     var extra = ls.items.length - lines.length;
 
