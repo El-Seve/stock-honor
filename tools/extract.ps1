@@ -1,5 +1,5 @@
 param(
-    [string]$Path = "C:\Users\IseverinoS\Downloads\BD Oracle2 20260731_CONF_cierre.xlsb",
+    [string]$Path = "C:\Users\IseverinoS\Downloads\Bases_Stock&Movs_Honor_CONF.xlsx",
     [string]$OutJson = (Join-Path $PSScriptRoot "stock_data.json")
 )
 
@@ -17,29 +17,43 @@ try {
     # Column indices (1-based)
     $COL_PERIODO=1; $COL_DIA=2; $COL_CODORACLE=6; $COL_ITEMS=7
     $COL_CANAL=11; $COL_ESTADO=12; $COL_DISPONIBILIDAD=15
-    $COL_FAMILIA=16; $COL_MARCAMODELO=17; $COL_PRODUCTO=18
+    $COL_FAMILIA=16; $COL_MARCAMODELO=17; $COL_PRODUCTO=18; $COL_USO=19
     $COL_TIPO=23; $COL_SUBTIPO=24
     $COL_MARCA=27; $COL_CATEQ=36; $COL_CATACC=37
     $COL_PDV=34; $COL_ESTADOPDV=35
     $COL_REGION=38; $COL_DEPTO=39; $COL_UBIC=3
 
-    $famAllowedLower = @{ "moviles"=$true; "accesorios"=$true; "otros"=$true }
-    $marcaAllowedLower = "honor"
+    # ---- Filtros de alcance (todos case-insensitive) ----
+    $famAllowedLower   = @{ "moviles"=$true }                 # solo Moviles
+    $marcaAllowedLower = "honor"                              # solo Honor
+    $estadoAllowedLower= "nuevos"                             # ESTADO = Nuevos
+    $tipoAllowedLower  = "celular"                            # TIPO = Celular
+    $usoAllowedLower   = @{ "normal"=$true; "pack"=$true }    # USO Normal/Pack (excluye Dummie y Livedemo)
 
     function TrimStr($v) {
         if ($null -eq $v) { return "" }
         return ([string]$v).Trim()
     }
 
+    # Predicado unico de alcance, usado en ambas pasadas
+    function RowPasses($r) {
+        $fam = (TrimStr $data[$r, $COL_FAMILIA]).ToLowerInvariant()
+        if ($fam -eq "" -or -not $famAllowedLower.ContainsKey($fam)) { return $false }
+        if ((TrimStr $data[$r, $COL_DISPONIBILIDAD]) -ne "Disponible") { return $false }
+        if ((TrimStr $data[$r, $COL_ESTADOPDV]) -ne "OPERATIVO") { return $false }
+        if ((TrimStr $data[$r, $COL_MARCA]).ToLowerInvariant() -ne $marcaAllowedLower) { return $false }
+        if ((TrimStr $data[$r, $COL_ESTADO]).ToLowerInvariant() -ne $estadoAllowedLower) { return $false }
+        if ((TrimStr $data[$r, $COL_TIPO]).ToLowerInvariant() -ne $tipoAllowedLower) { return $false }
+        $uso = (TrimStr $data[$r, $COL_USO]).ToLowerInvariant()
+        if (-not $usoAllowedLower.ContainsKey($uso)) { return $false }
+        return $true
+    }
+
     # ---- Pass 1: build case-normalization maps (ordinal, pick most frequent variant) ----
     function BuildCanonicalMap($colIdx) {
         $counts = New-Object 'System.Collections.Generic.Dictionary[string,int]'([System.StringComparer]::Ordinal)
         for ($r=2; $r -le $rows; $r++) {
-            $fam = TrimStr $data[$r, $COL_FAMILIA]
-            if ($fam -eq "" -or -not $famAllowedLower.ContainsKey($fam.ToLowerInvariant())) { continue }
-            if ((TrimStr $data[$r, $COL_DISPONIBILIDAD]) -ne "Disponible") { continue }
-            if ((TrimStr $data[$r, $COL_ESTADOPDV]) -ne "OPERATIVO") { continue }
-            if ((TrimStr $data[$r, $COL_MARCA]).ToLowerInvariant() -ne $marcaAllowedLower) { continue }
+            if (-not (RowPasses $r)) { continue }
             $v = TrimStr $data[$r, $colIdx]
             if ($v -eq "") { continue }
             if ($counts.ContainsKey($v)) { $counts[$v]++ } else { $counts[$v] = 1 }
@@ -81,11 +95,8 @@ try {
 
     $kept = 0
     for ($r = 2; $r -le $rows; $r++) {
+        if (-not (RowPasses $r)) { continue }
         $famRaw = TrimStr $data[$r, $COL_FAMILIA]
-        if ($famRaw -eq "" -or -not $famAllowedLower.ContainsKey($famRaw.ToLowerInvariant())) { continue }
-        if ((TrimStr $data[$r, $COL_DISPONIBILIDAD]) -ne "Disponible") { continue }
-        if ((TrimStr $data[$r, $COL_ESTADOPDV]) -ne "OPERATIVO") { continue }
-        if ((TrimStr $data[$r, $COL_MARCA]).ToLowerInvariant() -ne $marcaAllowedLower) { continue }
 
         $fam = Norm $mapFamilia $famRaw
         $producto = Norm $mapProducto $data[$r, $COL_PRODUCTO]

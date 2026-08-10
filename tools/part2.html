@@ -19,7 +19,6 @@
 
   // ---------- state ----------
   var state = {
-    familia: new Set(['Moviles','Accesorios','Otros']),
     depto: '',
     canal: '',
     pdvIdx: '',      // '' = todos, else numeric index into pdvs
@@ -35,14 +34,13 @@
   function fmt(n){ return n.toLocaleString('es-PE'); }
   function tierOf(q){ return q<=2 ? 'stock-low' : (q<=9 ? 'stock-mid' : 'stock-high'); }
 
-  // Iterate stock rows applying familia + selected upper filters (controlled by opts)
+  // Iterate stock rows applying the selected cascade filters (controlled by opts)
   function eachRow(cb, opts){
     opts = opts || {};
     var pdvIdxNum = state.pdvIdx==='' ? -1 : +state.pdvIdx;
     for(var i=0;i<stock.length;i++){
       var row = stock[i];
       var p = products[row[0]], s = pdvs[row[1]];
-      if(!state.familia.has(p.familia)) continue;
       if(opts.depto && state.depto && s.departamento!==state.depto) continue;
       if(opts.canal && state.canal && s.canal!==state.canal) continue;
       if(opts.pdv && pdvIdxNum!==-1 && row[1]!==pdvIdxNum) continue;
@@ -133,28 +131,8 @@
     refreshCascade(); update();
   });
 
-  // ---------- familia chips ----------
-  var famChipsEl = document.getElementById('famChips');
-  ['Moviles','Accesorios','Otros'].forEach(function(fam){
-    var b = document.createElement('button');
-    b.type='button'; b.className='chip active'; b.textContent = fam==='Moviles' ? 'Smartphones' : fam;
-    b.dataset.fam = fam;
-    b.addEventListener('click', function(){
-      if(state.familia.has(fam)){
-        if(state.familia.size===1) return; // keep at least one
-        state.familia.delete(fam); b.classList.remove('active');
-      } else {
-        state.familia.add(fam); b.classList.add('active');
-      }
-      refreshCascade(); update();
-    });
-    famChipsEl.appendChild(b);
-  });
-
   document.getElementById('resetFilters').addEventListener('click', function(){
-    state.familia = new Set(['Moviles','Accesorios','Otros']);
     state.depto=''; state.canal=''; state.pdvIdx=''; state.modelo='';
-    famChipsEl.querySelectorAll('.chip').forEach(function(c){c.classList.add('active');});
     refreshCascade(); update();
   });
 
@@ -200,9 +178,6 @@
     } else if(state.pdvIdx!==''){
       var s=pdvs[+state.pdvIdx];
       ctx.push(s.ubicacion); if(s.departamento) ctx.push(s.departamento); if(s.canal) ctx.push(s.canal);
-    }
-    if(state.familia.size < 3){
-      ctx.push('Familia: '+Array.from(state.familia).map(function(f){return f==='Moviles'?'Smartphones':f;}).join(', '));
     }
     return ctx;
   }
@@ -259,8 +234,7 @@
     groups.forEach(function(g){
       var tier = tierOf(g.qty);
       var pct = Math.max(6, Math.round(g.qty/maxQty*100));
-      var tagHtml = (byModelo && g.familia) ? ' <span class="tag fam-'+g.familia+'">'+escapeHtml(g.familia==='Moviles'?'Smartphone':g.familia)+'</span>' : '';
-      html += '<tr><td><div class="pdv-name">'+escapeHtml(g.label)+tagHtml+'</div><div class="sub-meta">'+escapeHtml(g.sub||'')+'</div></td>'+
+      html += '<tr><td><div class="pdv-name">'+escapeHtml(g.label)+'</div><div class="sub-meta">'+escapeHtml(g.sub||'')+'</div></td>'+
               '<td class="num"><div class="meter-cell"><span class="qty tabular" style="color:var(--'+tier+')">'+fmt(g.qty)+'</span>'+
               '<div class="meter-track"><div class="meter-fill" style="width:'+pct+'%;background:var(--'+tier+')"></div></div></div></td></tr>';
       g.items.forEach(function(it){
