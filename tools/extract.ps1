@@ -24,10 +24,10 @@ try {
     $COL_REGION=38; $COL_DEPTO=39; $COL_UBIC=3
 
     # ---- Filtros de alcance (todos case-insensitive) ----
-    $famAllowedLower   = @{ "moviles"=$true }                 # solo Moviles
+    $famAllowedLower   = @{ "moviles"=$true; "accesorios"=$true }  # Moviles y Accesorios
     $marcaAllowedLower = "honor"                              # solo Honor
     $estadoAllowedLower= "nuevos"                             # ESTADO = Nuevos
-    $tipoAllowedLower  = "celular"                            # TIPO = Celular
+    $tipoMovilLower    = "celular"                            # TIPO=Celular SOLO aplica a Moviles
     $usoAllowedLower   = @{ "normal"=$true; "pack"=$true }    # USO Normal/Pack (excluye Dummie y Livedemo)
 
     function TrimStr($v) {
@@ -43,7 +43,8 @@ try {
         if ((TrimStr $data[$r, $COL_ESTADOPDV]) -ne "OPERATIVO") { return $false }
         if ((TrimStr $data[$r, $COL_MARCA]).ToLowerInvariant() -ne $marcaAllowedLower) { return $false }
         if ((TrimStr $data[$r, $COL_ESTADO]).ToLowerInvariant() -ne $estadoAllowedLower) { return $false }
-        if ((TrimStr $data[$r, $COL_TIPO]).ToLowerInvariant() -ne $tipoAllowedLower) { return $false }
+        # TIPO=Celular solo se exige a Moviles (Accesorios son AUDIO/TABLET/WEARABLES)
+        if ($fam -eq "moviles" -and (TrimStr $data[$r, $COL_TIPO]).ToLowerInvariant() -ne $tipoMovilLower) { return $false }
         $uso = (TrimStr $data[$r, $COL_USO]).ToLowerInvariant()
         if (-not $usoAllowedLower.ContainsKey($uso)) { return $false }
         return $true

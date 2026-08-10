@@ -223,6 +223,7 @@ td.num,th.num{text-align:right;}
   background:var(--surface-2);color:var(--muted);
 }
 .tag.fam-Moviles{background:var(--accent-soft);color:var(--accent);}
+.tag.fam-Accesorios{background:rgba(184,121,15,0.14);color:var(--stock-mid);}
 .pdv-name{font-weight:600;}
 .sub-meta{color:var(--muted);font-size:11.5px;}
 .cod-oracle{
@@ -259,7 +260,7 @@ footer.note b{color:var(--ink);}
     <div class="title-block">
       <div class="eyebrow">Inventario &middot; Base Stocks</div>
       <h1>Stock Honor por modelo y punto de venta</h1>
-      <div class="sub">Smartphones Honor nuevos &middot; filtra en cascada y comparte por WhatsApp</div>
+      <div class="sub">Smartphones y accesorios Honor nuevos &middot; filtra en cascada y comparte por WhatsApp</div>
     </div>
     <div class="snapshot-pill"><span class="dot"></span>Corte al <b id="snapshotDate">&mdash;</b></div>
   </header>
@@ -268,19 +269,23 @@ footer.note b{color:var(--ink);}
 
   <div class="cascade" id="cascade">
     <div class="field">
-      <label for="deptoFilter"><span class="step">1</span> Departamento</label>
+      <label for="familiaFilter"><span class="step">1</span> Familia</label>
+      <select id="familiaFilter"><option value="">Todas</option></select>
+    </div>
+    <div class="field">
+      <label for="deptoFilter"><span class="step">2</span> Departamento</label>
       <select id="deptoFilter"><option value="">Todos</option></select>
     </div>
     <div class="field">
-      <label for="canalFilter"><span class="step">2</span> Canal</label>
+      <label for="canalFilter"><span class="step">3</span> Canal</label>
       <select id="canalFilter"><option value="">Todos</option></select>
     </div>
     <div class="field">
-      <label for="pdvFilter"><span class="step">3</span> Punto de venta</label>
+      <label for="pdvFilter"><span class="step">4</span> Punto de venta</label>
       <select id="pdvFilter"><option value="">Todos</option></select>
     </div>
     <div class="field">
-      <label for="modeloFilter"><span class="step">4</span> Modelo</label>
+      <label for="modeloFilter"><span class="step">5</span> Modelo</label>
       <select id="modeloFilter"><option value="">Todos</option></select>
     </div>
   </div>

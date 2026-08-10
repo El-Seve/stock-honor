@@ -6,7 +6,7 @@ Panel web estático para consultar el **stock disponible de productos Honor** (s
 
 ## Qué hace
 
-- **Filtros en cascada:** Departamento → Canal → Punto de venta → Modelo. Cada nivel acota al siguiente.
+- **Filtros en cascada:** Familia → Departamento → Canal → Punto de venta → Modelo. Cada nivel acota al siguiente.
 - **Resultado progresivo:**
   - Sin modelo elegido → lista los modelos con stock del ámbito (con desglose por SKU).
   - Con un punto de venta elegido → todos sus modelos.
@@ -19,7 +19,8 @@ Generado desde la pestaña **Base Stocks** del Excel Honor (Oracle). Filtros de 
 
 - Marca **Honor**.
 - **ESTADO** = Nuevos.
-- **FAMILIA** = Moviles · **TIPO** = Celular (solo smartphones).
+- **FAMILIA** ∈ {Moviles, Accesorios} — seleccionable con el combo Familia.
+- **TIPO** = Celular **solo para Moviles** (Accesorios: AUDIO/TABLET/WEARABLES).
 - **USO** ∈ {Normal, Pack} (excluye equipos Dummie de exhibición y Livedemo).
 - Solo stock **Disponible** en puntos de venta **OPERATIVO**.
 - Nivel de detalle: **PRODUCTO** (SKU con color/capacidad), agrupado por modelo.
