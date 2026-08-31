@@ -1,308 +1,254 @@
-<title>Stock Honor por Modelo y Punto de Venta</title>
+<title>Stock Honor · IS Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+/* ===== IS Design System v1.0 Stable — tokens ===== */
 :root{
-  --bg:#f2f4f1;
-  --surface:#ffffff;
-  --surface-2:#eaece8;
-  --ink:#1b211f;
-  --muted:#5c6864;
-  --line:#dde3df;
-  --accent:#0e7c6b;
-  --accent-ink:#ffffff;
-  --accent-soft:#e1f2ee;
-  --stock-high:#1e8e5a;
-  --stock-mid:#b8790f;
-  --stock-low:#b23b3b;
-  --focus:#0e7c6b;
-  --radius:10px;
-  --shadow:0 1px 2px rgba(20,30,27,0.06), 0 4px 16px rgba(20,30,27,0.05);
-}
-@media (prefers-color-scheme: dark){
-  :root{
-    --bg:#12716200;
-    --bg:#141816;
-    --surface:#1c2220;
-    --surface-2:#232a27;
-    --ink:#eaeeea;
-    --muted:#93a19c;
-    --line:#2b332f;
-    --accent:#39cbab;
-    --accent-ink:#0b1a17;
-    --accent-soft:#1a2f2a;
-    --stock-high:#4cbf85;
-    --stock-mid:#dba13a;
-    --stock-low:#e2685f;
-    --shadow:0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#141816;
-  --surface:#1c2220;
-  --surface-2:#232a27;
-  --ink:#eaeeea;
-  --muted:#93a19c;
-  --line:#2b332f;
-  --accent:#39cbab;
-  --accent-ink:#0b1a17;
-  --accent-soft:#1a2f2a;
-  --stock-high:#4cbf85;
-  --stock-mid:#dba13a;
-  --stock-low:#e2685f;
-  --shadow:0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
-}
-:root[data-theme="light"]{
-  --bg:#f2f4f1;
-  --surface:#ffffff;
-  --surface-2:#eaece8;
-  --ink:#1b211f;
-  --muted:#5c6864;
-  --line:#dde3df;
-  --accent:#0e7c6b;
-  --accent-ink:#ffffff;
-  --accent-soft:#e1f2ee;
-  --stock-high:#1e8e5a;
-  --stock-mid:#b8790f;
-  --stock-low:#b23b3b;
-  --shadow:0 1px 2px rgba(20,30,27,0.06), 0 4px 16px rgba(20,30,27,0.05);
+  --blue:#5E89B5; --blueSoft:#DCE8F1; --olive:#7D8B5A;
+  --warm:#FCFAF5; --sand:#EDE4D4; --graph:#39434A; --mist:#DDE3E6;
+  --success:#5F9E74; --warning:#D89A45; --danger:#C96B57;
+  --border:#D9DEE1;
+  --ink:var(--graph); --muted:#6a747b;
+  --radius:16px; --radius-sm:12px;
+  --shadow:0 8px 24px #39434a12;
+  /* niveles de stock -> semántica IS (informa riesgo de quiebre) */
+  --stock-high:var(--success); --stock-mid:var(--warning); --stock-low:var(--danger);
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
-  background:var(--bg);
-  color:var(--ink);
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  font-size:14.5px;
-  line-height:1.5;
-  -webkit-font-smoothing:antialiased;
+  background:var(--warm); color:var(--graph);
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  font-size:14.5px; line-height:1.5; -webkit-font-smoothing:antialiased;
 }
-.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px;}
-.tabular{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+.tabular{font-variant-numeric:tabular-nums;}
+:focus-visible{outline:3px solid #5e89b566;outline-offset:2px;border-radius:6px;}
+.skip{position:absolute;left:-9999px;}
+.skip:focus{left:14px;top:10px;background:#fff;padding:10px 14px;border-radius:10px;z-index:99;box-shadow:var(--shadow);}
 
-/* Header */
-header.top{
-  display:flex;flex-wrap:wrap;gap:16px;
-  align-items:flex-end;justify-content:space-between;
-  margin-bottom:22px;
+/* ===== Topbar ===== */
+.topbar{
+  position:sticky;top:0;z-index:10;
+  display:flex;align-items:center;gap:16px;justify-content:space-between;
+  padding:12px 24px;background:#fcfaf5ee;border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);
 }
-.title-block h1{
-  margin:0 0 4px;
-  font-size:22px;
-  font-weight:700;
-  letter-spacing:-0.01em;
-  text-wrap:balance;
-}
-.title-block .eyebrow{
-  text-transform:uppercase;
-  letter-spacing:0.08em;
-  font-size:11px;
-  font-weight:700;
-  color:var(--accent);
-  margin-bottom:6px;
-}
-.title-block .sub{color:var(--muted);font-size:13px;}
+.brand{display:flex;align-items:center;gap:12px;}
+.mark{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--graph);color:#fff;font-weight:800;font-size:18px;flex:none;}
+.brand-txt .eyebrow{margin:0;}
+.brand-txt strong{font-size:15px;font-weight:800;letter-spacing:-0.01em;}
 .snapshot-pill{
-  display:inline-flex;align-items:center;gap:6px;
-  background:var(--surface);
-  border:1px solid var(--line);
-  border-radius:100px;
-  padding:6px 12px;
-  font-size:12.5px;
-  color:var(--muted);
-  white-space:nowrap;
+  display:inline-flex;align-items:center;gap:8px;
+  background:#fff;border:1px solid var(--border);border-radius:999px;
+  padding:7px 14px;font-size:12.5px;color:var(--muted);white-space:nowrap;
 }
-.snapshot-pill b{color:var(--ink);font-weight:600;}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none;}
+.snapshot-pill b{color:var(--graph);font-weight:700;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--olive);flex:none;}
 
-/* Stat cards */
-.stats{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-  gap:12px;
-  margin-bottom:22px;
+/* ===== Layout ===== */
+main{max-width:1300px;margin:auto;padding:26px 24px 12px;}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--olive);text-transform:uppercase;}
+.context{margin-bottom:22px;}
+.context h1{font-size:30px;margin:6px 0 4px;letter-spacing:-0.015em;text-wrap:balance;}
+.context .sub{color:var(--muted);font-size:13.5px;margin:0;max-width:72ch;}
+
+/* ===== KPI cards ===== */
+.kpis{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:14px;margin-bottom:16px;
 }
 .stat{
-  background:var(--surface);
-  border:1px solid var(--line);
-  border-radius:var(--radius);
-  padding:14px 16px;
-  box-shadow:var(--shadow);
+  background:#fff;border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px;box-shadow:var(--shadow);
 }
-.stat .num{font-size:24px;font-weight:700;letter-spacing:-0.01em;}
-.stat .label{color:var(--muted);font-size:12px;margin-top:2px;}
+.stat .label{font-size:12px;color:var(--muted);font-weight:600;}
+.stat .num{display:block;font-size:30px;font-weight:800;letter-spacing:-0.02em;margin-top:6px;color:var(--graph);}
 
-/* Familia chips row */
-.fam-row{
-  display:flex;flex-wrap:wrap;gap:8px;align-items:center;
-  margin-bottom:14px;
+/* ===== Panels ===== */
+.panel{
+  background:#fff;border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px 20px;box-shadow:var(--shadow);margin-bottom:16px;
 }
-.fam-row .fam-label{
-  font-size:11px;text-transform:uppercase;letter-spacing:0.06em;
-  font-weight:700;color:var(--muted);margin-right:2px;
-}
-.chip-group{display:inline-flex;gap:6px;flex-wrap:wrap;}
-.chip{
-  border:1px solid var(--line);
-  background:var(--surface);
-  color:var(--muted);
-  font-size:12.5px;font-weight:600;
-  padding:6px 11px;border-radius:100px;cursor:pointer;
-  user-select:none;
-}
-.chip.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
-.reset{
-  font-size:12.5px;color:var(--muted);background:none;border:none;
-  cursor:pointer;text-decoration:underline;padding:6px 4px;
-}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.panel-head h2{margin:0;font-size:16px;font-weight:700;}
+h2{font-size:18px;}
 
-/* Cascade */
-.cascade{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
-  gap:12px;
-  margin-bottom:20px;
-}
-.cascade .field{display:flex;flex-direction:column;gap:5px;}
+/* ===== Cascade filters ===== */
+.cascade{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}
+.cascade .field{display:flex;flex-direction:column;gap:6px;}
 .cascade label{
-  font-size:11px;text-transform:uppercase;letter-spacing:0.06em;
-  font-weight:700;color:var(--muted);
-  display:flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:7px;
 }
 .cascade label .step{
-  display:inline-flex;align-items:center;justify-content:center;
-  width:16px;height:16px;border-radius:50%;
-  background:var(--accent-soft);color:var(--accent);
-  font-size:10px;font-weight:700;flex:none;
+  display:inline-grid;place-items:center;width:18px;height:18px;border-radius:999px;
+  background:var(--blueSoft);color:#2f527a;font-size:10px;font-weight:800;flex:none;
 }
 .cascade select{
-  width:100%;
-  border:1px solid var(--line);background:var(--surface);color:var(--ink);
-  border-radius:9px;padding:9px 12px;font-size:13.5px;font-weight:600;
-  cursor:pointer;
+  width:100%;min-height:44px;
+  border:1px solid var(--border);background:#fff;color:var(--graph);
+  border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-weight:600;
+  font-family:inherit;cursor:pointer;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236a747b' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;
 }
-.cascade select:focus{outline:2px solid var(--focus);outline-offset:1px;}
-.cascade select.set{border-color:var(--accent);}
+.cascade select.set{border-color:var(--blue);background-color:#fbfdff;}
 
-/* Results header */
-.results-head{
-  display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between;
-  margin:22px 0 10px;
+/* ===== Reset link / buttons ===== */
+.reset{
+  min-height:36px;border:1px solid var(--border);background:#fff;color:var(--muted);
+  font-size:12.5px;font-weight:700;padding:6px 14px;border-radius:999px;cursor:pointer;font-family:inherit;
 }
-.results-head h2{font-size:16px;margin:0;letter-spacing:-0.005em;text-wrap:balance;}
-.results-head .count{color:var(--muted);font-size:12.5px;}
+.reset:hover{border-color:var(--blue);color:var(--graph);}
+
+/* ===== Results head ===== */
+.results-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.results-head h2{margin:0;font-size:17px;letter-spacing:-0.01em;text-wrap:balance;}
+.results-actions{display:flex;align-items:center;gap:12px;}
+.count{color:var(--muted);font-size:12.5px;}
 .export-btn{
-  display:inline-flex;align-items:center;gap:6px;
-  border:1px solid var(--line);background:var(--surface);color:var(--ink);
-  font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:7px;min-height:44px;
+  border:1px solid var(--border);background:#fff;color:var(--graph);
+  font-size:13px;font-weight:700;padding:8px 14px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;
 }
-.export-btn:hover{border-color:#25D366;color:#128C4A;}
-.export-btn:disabled{opacity:0.45;cursor:default;}
-.export-btn:disabled:hover{border-color:var(--line);color:var(--ink);}
+.export-btn:hover{border-color:#25D366;color:#128C4A;background:#f5fbf7;}
+.export-btn:disabled{opacity:0.5;cursor:default;}
+.export-btn:disabled:hover{border-color:var(--border);color:var(--graph);background:#fff;}
 
-/* Table */
-.table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);}
-table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px;}
+/* ===== Table ===== */
+.table-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-sm);}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px;}
 thead th{
-  position:sticky;top:0;background:var(--surface-2);
+  position:sticky;top:0;background:var(--warm);
   text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;
-  color:var(--muted);font-weight:700;
-  padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;
+  color:var(--muted);font-weight:800;
+  padding:11px 14px;border-bottom:1px solid var(--border);white-space:nowrap;
 }
-thead th:hover{color:var(--ink);}
-thead th.sorted{color:var(--accent);}
-thead th .arrow{font-size:9px;margin-left:3px;}
-tbody td{padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tbody td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
 tbody tr:last-child td{border-bottom:none;}
-tbody tr:hover{background:var(--accent-soft);}
+tbody tr:hover{background:#fbfaf6;}
 td.num,th.num{text-align:right;}
-.meter-cell{display:flex;align-items:center;gap:8px;justify-content:flex-end;}
-.meter-track{width:56px;height:6px;border-radius:4px;background:var(--surface-2);overflow:hidden;flex:none;}
-.meter-fill{height:100%;border-radius:4px;}
-.qty{font-weight:700;min-width:34px;text-align:right;}
-.tag{
-  display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;
-  background:var(--surface-2);color:var(--muted);
-}
-.tag.fam-Moviles{background:var(--accent-soft);color:var(--accent);}
-.tag.fam-Accesorios{background:rgba(184,121,15,0.14);color:var(--stock-mid);}
-.pdv-name{font-weight:600;}
+.meter-cell{display:flex;align-items:center;gap:9px;justify-content:flex-end;}
+.meter-track{width:60px;height:8px;border-radius:999px;background:#edf0f1;overflow:hidden;flex:none;}
+.meter-fill{height:100%;border-radius:999px;}
+.qty{font-weight:800;min-width:34px;text-align:right;}
+.pdv-name{font-weight:700;color:var(--graph);}
 .sub-meta{color:var(--muted);font-size:11.5px;}
+
+/* Badges (tags + código Oracle) */
+.tag{
+  display:inline-block;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;
+  background:var(--mist);color:var(--muted);letter-spacing:.02em;vertical-align:middle;margin-left:4px;
+}
+.tag.fam-Moviles{background:var(--blueSoft);color:#2f527a;}
+.tag.fam-Accesorios{background:#e9ecdd;color:#5b6740;}
 .cod-oracle{
-  display:inline-block;margin-left:4px;
+  display:inline-block;margin-left:6px;
   font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  font-size:10.5px;font-weight:600;letter-spacing:0.02em;
-  color:var(--accent);
-  background:var(--accent-soft);
-  padding:1px 6px;border-radius:5px;
-  vertical-align:middle;
+  font-size:10.5px;font-weight:700;letter-spacing:0.02em;
+  color:#2f527a;background:var(--blueSoft);
+  padding:1px 7px;border-radius:6px;vertical-align:middle;
 }
 
+/* Empty / states */
 .empty-state{
-  border:1px dashed var(--line);border-radius:var(--radius);
-  padding:48px 20px;text-align:center;color:var(--muted);font-size:13.5px;
+  border:1px dashed var(--border);border-radius:var(--radius-sm);
+  padding:44px 20px;text-align:center;color:var(--muted);font-size:13.5px;background:#f2f3f2;
 }
-.empty-state .big{font-size:15px;color:var(--ink);font-weight:600;margin-bottom:4px;}
+.empty-state .big{font-size:15px;color:var(--graph);font-weight:700;margin-bottom:4px;}
 
-footer.note{
-  margin-top:34px;padding-top:16px;border-top:1px solid var(--line);
-  color:var(--muted);font-size:12px;line-height:1.6;
+/* Footer */
+footer{
+  max-width:1300px;margin:8px auto 0;padding:16px 24px 34px;
+  color:var(--muted);font-size:11.5px;line-height:1.6;border-top:1px solid var(--border);
 }
-footer.note b{color:var(--ink);}
+footer b{color:var(--graph);}
+footer .isbadge{display:inline-block;padding:4px 10px;border-radius:999px;background:var(--blueSoft);color:#2f527a;font-weight:800;font-size:10.5px;letter-spacing:.03em;margin-right:8px;}
 
-@media (max-width:640px){
-  .wrap{padding:18px 14px 40px;}
-  header.top{align-items:flex-start;}
-  .stats{grid-template-columns:1fr 1fr;}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+@media (max-width:820px){
+  .topbar{padding:12px 16px;}
+  main{padding:20px 16px 10px;}
+  .context h1{font-size:24px;}
+  .kpis{grid-template-columns:1fr 1fr;}
+}
+@media (max-width:520px){
+  .kpis{grid-template-columns:1fr;}
+  .results-head{align-items:flex-start;}
 }
 </style>
 
-<div class="wrap">
-  <header class="top">
-    <div class="title-block">
-      <div class="eyebrow">Inventario &middot; Base Stocks</div>
-      <h1>Stock Honor por modelo y punto de venta</h1>
-      <div class="sub">Smartphones y accesorios Honor nuevos &middot; filtra en cascada y comparte por WhatsApp</div>
-    </div>
-    <div class="snapshot-pill"><span class="dot"></span>Corte al <b id="snapshotDate">&mdash;</b></div>
-  </header>
+<a class="skip" href="#resultsArea">Saltar a resultados</a>
 
-  <div class="stats" id="statsRow"></div>
-
-  <div class="cascade" id="cascade">
-    <div class="field">
-      <label for="familiaFilter"><span class="step">1</span> Familia</label>
-      <select id="familiaFilter"><option value="">Todas</option></select>
-    </div>
-    <div class="field">
-      <label for="deptoFilter"><span class="step">2</span> Departamento</label>
-      <select id="deptoFilter"><option value="">Todos</option></select>
-    </div>
-    <div class="field">
-      <label for="canalFilter"><span class="step">3</span> Canal</label>
-      <select id="canalFilter"><option value="">Todos</option></select>
-    </div>
-    <div class="field">
-      <label for="pdvFilter"><span class="step">4</span> Punto de venta</label>
-      <select id="pdvFilter"><option value="">Todos</option></select>
-    </div>
-    <div class="field">
-      <label for="modeloFilter"><span class="step">5</span> Modelo</label>
-      <select id="modeloFilter"><option value="">Todos</option></select>
+<header class="topbar">
+  <div class="brand">
+    <div class="mark" aria-hidden="true">H</div>
+    <div class="brand-txt">
+      <div class="eyebrow">IS &middot; Inventario</div>
+      <strong>Stock Honor</strong>
     </div>
   </div>
+  <div class="snapshot-pill"><span class="dot" aria-hidden="true"></span>Corte al&nbsp;<b id="snapshotDate">&mdash;</b></div>
+</header>
 
-  <div class="results-head">
-    <h2 id="resultsTitle">Stock Honor &mdash; todos los puntos de venta</h2>
-    <div style="display:flex;align-items:center;gap:12px;">
+<main>
+  <div class="context">
+    <div class="eyebrow">Base Stocks &middot; consulta</div>
+    <h1>Stock Honor por modelo y punto de venta</h1>
+    <p class="sub">Smartphones y accesorios Honor nuevos &middot; filtra en cascada y comparte por WhatsApp.</p>
+  </div>
+
+  <section class="kpis" id="statsRow" aria-label="Resumen de stock"></section>
+
+  <section class="panel" aria-label="Filtros">
+    <div class="panel-head">
+      <h2>Filtrar en cascada</h2>
       <button type="button" class="reset" id="resetFilters">Limpiar selecci&oacute;n</button>
-      <span class="count" id="resultsCount"></span>
-      <button type="button" class="export-btn" id="shareBtn" disabled>
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="#25D366" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.29-1.39a9.9 9.9 0 0 0 4.7 1.2h.01c5.46 0 9.9-4.45 9.9-9.9 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm5.8 14.1c-.24.68-1.4 1.32-1.93 1.37-.5.05-.98.25-3.3-.68-2.8-1.12-4.62-3.98-4.76-4.16-.14-.19-1.14-1.52-1.14-2.9 0-1.37.72-2.04.97-2.32.25-.28.55-.34.73-.34.19 0 .37 0 .53.01.17.01.4-.06.62.48.24.58.81 2 .88 2.15.07.14.12.31.02.5-.1.19-.15.31-.29.48-.15.17-.31.38-.44.51-.15.15-.3.31-.13.6.17.29.75 1.25 1.62 2.02 1.12.99 2.06 1.31 2.35 1.46.29.15.46.12.63-.07.17-.19.72-.85.92-1.14.19-.29.38-.24.63-.14.26.1 1.65.78 1.93.92.29.14.48.21.55.33.07.12.07.68-.17 1.36z"/></svg>
-        Compartir en WhatsApp
-      </button>
     </div>
-  </div>
+    <div class="cascade" id="cascade">
+      <div class="field">
+        <label for="familiaFilter"><span class="step">1</span> Familia</label>
+        <select id="familiaFilter"><option value="">Todas</option></select>
+      </div>
+      <div class="field">
+        <label for="deptoFilter"><span class="step">2</span> Departamento</label>
+        <select id="deptoFilter"><option value="">Todos</option></select>
+      </div>
+      <div class="field">
+        <label for="canalFilter"><span class="step">3</span> Canal</label>
+        <select id="canalFilter"><option value="">Todos</option></select>
+      </div>
+      <div class="field">
+        <label for="pdvFilter"><span class="step">4</span> Punto de venta</label>
+        <select id="pdvFilter"><option value="">Todos</option></select>
+      </div>
+      <div class="field">
+        <label for="modeloFilter"><span class="step">5</span> Modelo</label>
+        <select id="modeloFilter"><option value="">Todos</option></select>
+      </div>
+    </div>
+  </section>
 
-  <div id="resultsArea"></div>
-</div>
+  <section class="panel" aria-label="Resultados">
+    <div class="results-head">
+      <h2 id="resultsTitle">Stock Honor &mdash; todos los puntos de venta</h2>
+      <div class="results-actions">
+        <span class="count" id="resultsCount"></span>
+        <button type="button" class="export-btn" id="shareBtn" disabled>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="#25D366" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.29-1.39a9.9 9.9 0 0 0 4.7 1.2h.01c5.46 0 9.9-4.45 9.9-9.9 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm5.8 14.1c-.24.68-1.4 1.32-1.93 1.37-.5.05-.98.25-3.3-.68-2.8-1.12-4.62-3.98-4.76-4.16-.14-.19-1.14-1.52-1.14-2.9 0-1.37.72-2.04.97-2.32.25-.28.55-.34.73-.34.19 0 .37 0 .53.01.17.01.4-.06.62.48.24.58.81 2 .88 2.15.07.14.12.31.02.5-.1.19-.15.31-.29.48-.15.17-.31.38-.44.51-.15.15-.3.31-.13.6.17.29.75 1.25 1.62 2.02 1.12.99 2.06 1.31 2.35 1.46.29.15.46.12.63-.07.17-.19.72-.85.92-1.14.19-.29.38-.24.63-.14.26.1 1.65.78 1.93.92.29.14.48.21.55.33.07.12.07.68-.17 1.36z"/></svg>
+          Compartir en WhatsApp
+        </button>
+      </div>
+    </div>
+    <div id="resultsArea"></div>
+  </section>
+</main>
+
+<footer>
+  <span class="isbadge">IS DESIGN SYSTEM v1.0</span>
+  Fuente: BD Oracle &middot; pesta&ntilde;a Base Stocks. Alcance: Honor, estado Nuevos, stock Disponible en PDV Operativo, USO Normal/Pack. Los datos son una foto del corte indicado.
+</footer>
 
 <script id="stock-data" type="application/json">
