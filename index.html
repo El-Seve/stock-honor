@@ -577,9 +577,15 @@ footer .isbadge{display:inline-block;padding:4px 10px;border-radius:999px;backgr
     msg += 'Corte ' + SNAPSHOT_LABEL + '\n';
 
     if(ls.modelo){
-      // Modo A: Modelo -> PDVs
+      // Modo A: Modelo -> PDV (total) -> SKUs con código
       msg += '\n📱 *' + ls.modelo + '*\n';
-      ls.pdvs.forEach(function(g){ msg += '🏪 ' + g.name + '  -->' + fmt(g.qty) + '\n'; });
+      ls.pdvs.forEach(function(g){
+        msg += '🏪 ' + g.name + '  -->' + fmt(g.qty) + '\n';
+        g.skus.forEach(function(it){
+          var code = it.cod ? ' [' + it.cod + ']' : '';
+          msg += '   ' + it.producto + code + '  -->' + fmt(it.qty) + '\n';
+        });
+      });
     } else {
       // Modo B: PDV -> SKUs
       ls.pdvs.forEach(function(g){
