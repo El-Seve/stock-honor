@@ -63,24 +63,26 @@
   var pdvSel   = document.getElementById('pdvFilter');
   var modeloSel= document.getElementById('modeloFilter');
 
+  // Cross-filter: las opciones de cada filtro se acotan por TODOS los demas
+  // filtros seleccionados (no solo los de arriba). Cada distinct* aplica todos
+  // los filtros MENOS el suyo propio.
   function distinctFamilia(){
-    var set=new Set(); for(var i=0;i<products.length;i++){ if(products[i].familia) set.add(products[i].familia); }
-    // orden fijo: Smartphones (Moviles) primero, luego el resto
+    var set=new Set(); eachRow(function(r,p,s){ if(p.familia) set.add(p.familia); }, {depto:true,canal:true,pdv:true,modelo:true});
     return Array.from(set).sort(function(a,b){
       if(a==='Moviles') return -1; if(b==='Moviles') return 1;
       return a.localeCompare(b,'es');
     });
   }
   function distinctDepto(){
-    var set=new Set(); eachRow(function(r,p,s){ if(s.departamento) set.add(s.departamento); }, {familia:true});
+    var set=new Set(); eachRow(function(r,p,s){ if(s.departamento) set.add(s.departamento); }, {familia:true,canal:true,pdv:true,modelo:true});
     return sortEs(Array.from(set));
   }
   function distinctCanal(){
-    var set=new Set(); eachRow(function(r,p,s){ if(s.canal) set.add(s.canal); }, {familia:true,depto:true});
+    var set=new Set(); eachRow(function(r,p,s){ if(s.canal) set.add(s.canal); }, {familia:true,depto:true,pdv:true,modelo:true});
     return sortEs(Array.from(set));
   }
   function distinctPdv(){
-    var set=new Set(); eachRow(function(r,p,s){ set.add(r[1]); }, {familia:true,depto:true,canal:true});
+    var set=new Set(); eachRow(function(r,p,s){ set.add(r[1]); }, {familia:true,depto:true,canal:true,modelo:true});
     var arr = Array.from(set).map(function(idx){ return {idx:idx, label:pdvs[idx].pdv}; });
     arr.sort(function(a,b){ return a.label.localeCompare(b.label,'es'); });
     return arr;
@@ -90,9 +92,11 @@
     return sortEs(Array.from(set));
   }
 
-  // Familia select: el valor es la familia real, la etiqueta es amigable
+  // Familia select: el valor es la familia real, la etiqueta es amigable.
+  // Si la selección actual quedó sin datos (por otros filtros), se conserva igual.
   function fillFamiliaSelect(){
     var vals = distinctFamilia();
+    if(state.familia && vals.indexOf(state.familia)===-1) vals = [state.familia].concat(vals);
     var html = '<option value="">Todas</option>';
     for(var i=0;i<vals.length;i++){
       var v = vals[i];
@@ -103,65 +107,46 @@
   }
 
   function fillSelect(sel, values, selected){
+    var vals = values.slice();
+    if(selected && vals.indexOf(selected)===-1) vals = [selected].concat(vals); // conservar selección sin datos
     var html = '<option value="">Todos</option>';
-    for(var i=0;i<values.length;i++){
-      var v = values[i];
+    for(var i=0;i<vals.length;i++){
+      var v = vals[i];
       html += '<option value="'+escapeHtml(v)+'"'+(v===selected?' selected':'')+'>'+escapeHtml(v)+'</option>';
     }
     sel.innerHTML = html;
     sel.classList.toggle('set', !!selected);
   }
   function fillPdvSelect(sel, opts, selectedIdx){
+    var list = opts.slice();
+    if(selectedIdx!=='' && !list.some(function(o){return String(o.idx)===String(selectedIdx);})){
+      list = [{idx:+selectedIdx, label:pdvs[+selectedIdx].pdv}].concat(list); // conservar PDV sin datos
+    }
     var html = '<option value="">Todos</option>';
-    for(var i=0;i<opts.length;i++){
-      var o = opts[i];
+    for(var i=0;i<list.length;i++){
+      var o = list[i];
       html += '<option value="'+o.idx+'"'+(String(o.idx)===String(selectedIdx)?' selected':'')+'>'+escapeHtml(o.label)+'</option>';
     }
     sel.innerHTML = html;
     sel.classList.toggle('set', selectedIdx!=='');
   }
 
-  // Rebuild all cascade selects top-down, dropping selections that are no longer valid.
+  // Reconstruye TODOS los selects con opciones cross-filter, conservando cada
+  // selección (cualquier orden, sin borrar los demás filtros).
   function refreshCascade(){
     fillFamiliaSelect();
-
-    var deptos = distinctDepto();
-    if(state.depto && deptos.indexOf(state.depto)===-1){ state.depto=''; state.canal=''; state.pdvIdx=''; state.modelo=''; }
-    fillSelect(deptoSel, deptos, state.depto);
-
-    var canales = distinctCanal();
-    if(state.canal && canales.indexOf(state.canal)===-1){ state.canal=''; state.pdvIdx=''; state.modelo=''; }
-    fillSelect(canalSel, canales, state.canal);
-
-    var pdvOpts = distinctPdv();
-    if(state.pdvIdx!=='' && !pdvOpts.some(function(o){return String(o.idx)===String(state.pdvIdx);})){ state.pdvIdx=''; state.modelo=''; }
-    fillPdvSelect(pdvSel, pdvOpts, state.pdvIdx);
-
-    var modelos = distinctModelo();
-    if(state.modelo && modelos.indexOf(state.modelo)===-1){ state.modelo=''; }
-    fillSelect(modeloSel, modelos, state.modelo);
+    fillSelect(deptoSel, distinctDepto(), state.depto);
+    fillSelect(canalSel, distinctCanal(), state.canal);
+    fillPdvSelect(pdvSel, distinctPdv(), state.pdvIdx);
+    fillSelect(modeloSel, distinctModelo(), state.modelo);
   }
 
-  familiaSel.addEventListener('change', function(e){
-    state.familia = e.target.value; state.depto=''; state.canal=''; state.pdvIdx=''; state.modelo='';
-    refreshCascade(); update();
-  });
-  deptoSel.addEventListener('change', function(e){
-    state.depto = e.target.value; state.canal=''; state.pdvIdx=''; state.modelo='';
-    refreshCascade(); update();
-  });
-  canalSel.addEventListener('change', function(e){
-    state.canal = e.target.value; state.pdvIdx=''; state.modelo='';
-    refreshCascade(); update();
-  });
-  pdvSel.addEventListener('change', function(e){
-    state.pdvIdx = e.target.value; state.modelo='';
-    refreshCascade(); update();
-  });
-  modeloSel.addEventListener('change', function(e){
-    state.modelo = e.target.value;
-    refreshCascade(); update();
-  });
+  // Al cambiar un filtro NO se borran los demás; solo se re-acotan las listas.
+  familiaSel.addEventListener('change', function(e){ state.familia = e.target.value; refreshCascade(); update(); });
+  deptoSel.addEventListener('change',   function(e){ state.depto   = e.target.value; refreshCascade(); update(); });
+  canalSel.addEventListener('change',   function(e){ state.canal   = e.target.value; refreshCascade(); update(); });
+  pdvSel.addEventListener('change',     function(e){ state.pdvIdx  = e.target.value; refreshCascade(); update(); });
+  modeloSel.addEventListener('change',  function(e){ state.modelo  = e.target.value; refreshCascade(); update(); });
 
   document.getElementById('resetFilters').addEventListener('click', function(){
     state.familia=''; state.depto=''; state.canal=''; state.pdvIdx=''; state.modelo='';
@@ -259,7 +244,7 @@
     countEl.textContent = fmt(totalQty)+' u. en '+groups.length+' '+unitWord + (ctxParts.length?(' · '+ctxParts.join(' · ')):'');
 
     if(groups.length===0){
-      area.innerHTML = '<div class="empty-state"><div class="big">Sin stock disponible</div>No hay unidades con los filtros seleccionados. Prueba ampliando la selecci&oacute;n.</div>';
+      area.innerHTML = '<div class="empty-state"><div class="big">Sin stock con esta combinaci&oacute;n</div>Ninguna combinaci&oacute;n de los filtros actuales tiene stock. Cambia o limpia alg&uacute;n filtro (ninguno se borra solo).</div>';
       lastShare=null; shareBtn.disabled=true; return;
     }
 
@@ -281,62 +266,67 @@
     html += '</tbody></table>';
     area.innerHTML = '<div class="table-scroll">'+html+'</div>';
 
-    // Detail lines for the WhatsApp message:
-    //  - if a modelo is selected -> its SKU breakdown (productos) aggregated over the scope
-    //  - otherwise -> the group rows (modelos o PDVs) con su total
-    // Con un modelo o un PDV específico, el mensaje baja a nivel producto (SKU)
-    // con su código Oracle. En vistas amplias (sin PDV ni modelo) lista los
-    // modelos, que no tienen un código Oracle único por fila.
-    var shareItems;
-    if(state.modelo || state.pdvIdx!==''){
-      var skuMap = new Map();
-      groups.forEach(function(g){ g.items.forEach(function(it){
-        var e = skuMap.get(it.producto);
-        if(e) e.qty += it.qty; else skuMap.set(it.producto, {qty:it.qty, cod:it.cod||''});
-      }); });
-      shareItems = Array.from(skuMap.entries())
-        .map(function(e){ return {label:e[0], qty:e[1].qty, cod:e[1].cod}; })
+    // ---- Estructura para WhatsApp: SIEMPRE organizada por Punto de Venta ----
+    //  - CON modelo filtrado  -> Modelo → PDVs (cada PDV con su cantidad de ese modelo)
+    //  - SIN modelo           -> PDV → SKUs (producto + código Oracle → cantidad)
+    var pdvMap = new Map();
+    eachRow(function(row, p, s){
+      var si = row[1];
+      if(!pdvMap.has(si)) pdvMap.set(si, {name:s.pdv, qty:0, skus:new Map()});
+      var g = pdvMap.get(si); g.qty += row[2];
+      var it = g.skus.get(p.producto);
+      if(it) it.qty += row[2]; else g.skus.set(p.producto, {qty:row[2], cod:p.codOracle||''});
+    }, {familia:true,depto:true,canal:true,pdv:true,modelo:true});
+    var sharePdvs = Array.from(pdvMap.values()).map(function(g){
+      g.skus = Array.from(g.skus.entries())
+        .map(function(e){ return {producto:e[0], qty:e[1].qty, cod:e[1].cod}; })
         .sort(function(a,b){ return b.qty - a.qty; });
-    } else {
-      shareItems = groups.map(function(g){ return {label:g.label, qty:g.qty, cod:''}; });
-    }
+      return g;
+    }).sort(function(a,b){ return b.qty - a.qty; });
 
-    lastShare = {
-      modelo: state.modelo,
-      pdvName: state.pdvIdx!=='' ? pdvs[+state.pdvIdx].pdv : '',
-      scopeTitle: scopeTitle(),
-      items: shareItems
-    };
+    lastShare = { modelo: state.modelo, ctx: shareHeaderCtx(), pdvs: sharePdvs };
     shareBtn.disabled = false;
+  }
+
+  // Filtros de contexto para el encabezado del mensaje (los que NO son el nivel
+  // de agrupación: Modelo va como título 📱 y el PDV como bloque 🏪).
+  function shareHeaderCtx(){
+    var c=[];
+    if(state.familia) c.push(famLabel(state.familia));
+    if(state.depto) c.push(state.depto);
+    if(state.canal) c.push(state.canal);
+    return c;
   }
 
   function update(){ renderStats(); renderResults(); }
 
   // ---------- share to WhatsApp ----------
+  // Estructura dinámica, siempre organizada a partir del Punto de Venta:
+  //   CON modelo filtrado -> 📱 Modelo, luego 🏪 PDV --> cantidad
+  //   SIN modelo          -> 🏪 PDV, luego líneas de SKU (producto [código] --> cantidad)
   shareBtn.addEventListener('click', function(){
     if(!lastShare) return;
-    var MAX_LINES = 40;
     var ls = lastShare;
 
-    // Header: Modelo y/o Punto de Venta (lo que esté seleccionado)
-    var header = [];
-    if(ls.modelo) header.push('Modelo: *'+ls.modelo+'*');
-    if(ls.pdvName) header.push('Punto de Venta: *'+ls.pdvName+'*');
-    if(header.length===0) header.push('*'+ls.scopeTitle+'*');
-    header[0] = '📦 ' + header[0];
+    var msg = '📦 *Stock Honor*' + (ls.ctx.length ? ' — '+ls.ctx.join(' · ') : '') + '\n';
+    msg += 'Corte ' + SNAPSHOT_LABEL + '\n';
 
-    var lines = ls.items.slice(0, MAX_LINES).map(function(it){
-      var code = it.cod ? ' ['+it.cod+']' : '';
-      return it.label+code+'  -->'+fmt(it.qty);
-    });
-    var extra = ls.items.length - lines.length;
+    if(ls.modelo){
+      // Modo A: Modelo -> PDVs
+      msg += '\n📱 *' + ls.modelo + '*\n';
+      ls.pdvs.forEach(function(g){ msg += '🏪 ' + g.name + '  -->' + fmt(g.qty) + '\n'; });
+    } else {
+      // Modo B: PDV -> SKUs
+      ls.pdvs.forEach(function(g){
+        msg += '\n🏪 *' + g.name + '*\n';
+        g.skus.forEach(function(it){
+          var code = it.cod ? ' [' + it.cod + ']' : '';
+          msg += it.producto + code + '  -->' + fmt(it.qty) + '\n';
+        });
+      });
+    }
 
-    var msg = header.join('\n')+'\n\n';
-    msg += 'Stock al '+SNAPSHOT_LABEL+'\n\n';
-    msg += lines.join('\n');
-    if(extra > 0) msg += '\n… y '+extra+' más';
-
-    window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank', 'noopener');
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg.trim()), '_blank', 'noopener');
   });
 
   // ---------- init ----------
