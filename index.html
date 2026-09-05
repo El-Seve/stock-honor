@@ -566,21 +566,26 @@ footer .isbadge{display:inline-block;padding:4px 10px;border-radius:999px;backgr
   function update(){ renderStats(); renderResults(); }
 
   // ---------- share to WhatsApp ----------
-  // Estructura dinámica, siempre organizada a partir del Punto de Venta:
-  //   CON modelo filtrado -> 📱 Modelo, luego 🏪 PDV --> cantidad
-  //   SIN modelo          -> 🏪 PDV, luego líneas de SKU (producto [código] --> cantidad)
+  // Emojis como secuencias de escape Unicode (ASCII en el fuente) para que
+  // ninguna codificacion los corrompa al generar/servir el archivo.
+  var EM_BOX   = String.fromCodePoint(0x1F4E6); // paquete
+  var EM_PHONE = String.fromCodePoint(0x1F4F1); // celular
+  var EM_STORE = String.fromCodePoint(0x1F3EA); // tienda
+  // Estructura dinamica, siempre organizada a partir del Punto de Venta:
+  //   CON modelo filtrado -> Modelo, luego PDV --> cantidad, con SKUs
+  //   SIN modelo          -> PDV, luego lineas de SKU (producto [codigo] --> cantidad)
   shareBtn.addEventListener('click', function(){
     if(!lastShare) return;
     var ls = lastShare;
 
-    var msg = '📦 *Stock Honor*' + (ls.ctx.length ? ' — '+ls.ctx.join(' · ') : '') + '\n';
+    var msg = EM_BOX + ' *Stock Honor*' + (ls.ctx.length ? ' - '+ls.ctx.join(' · ') : '') + '\n';
     msg += 'Corte ' + SNAPSHOT_LABEL + '\n';
 
     if(ls.modelo){
-      // Modo A: Modelo -> PDV (total) -> SKUs con código
-      msg += '\n📱 *' + ls.modelo + '*\n';
+      // Modo A: Modelo -> PDV (total) -> SKUs con codigo
+      msg += '\n' + EM_PHONE + ' *' + ls.modelo + '*\n';
       ls.pdvs.forEach(function(g){
-        msg += '🏪 ' + g.name + '  -->' + fmt(g.qty) + '\n';
+        msg += EM_STORE + ' ' + g.name + '  -->' + fmt(g.qty) + '\n';
         g.skus.forEach(function(it){
           var code = it.cod ? ' [' + it.cod + ']' : '';
           msg += '   ' + it.producto + code + '  -->' + fmt(it.qty) + '\n';
@@ -589,7 +594,7 @@ footer .isbadge{display:inline-block;padding:4px 10px;border-radius:999px;backgr
     } else {
       // Modo B: PDV -> SKUs
       ls.pdvs.forEach(function(g){
-        msg += '\n🏪 *' + g.name + '*\n';
+        msg += '\n' + EM_STORE + ' *' + g.name + '*\n';
         g.skus.forEach(function(it){
           var code = it.cod ? ' [' + it.cod + ']' : '';
           msg += it.producto + code + '  -->' + fmt(it.qty) + '\n';
