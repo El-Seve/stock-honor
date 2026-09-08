@@ -12,6 +12,7 @@ Panel web estático para consultar el **stock disponible de productos Honor** (s
   - Con un punto de venta elegido → todos sus modelos.
   - Con un modelo elegido → en qué puntos de venta está disponible.
 - **Compartir por WhatsApp:** arma el mensaje del ámbito seleccionado y abre WhatsApp para elegir contacto.
+- **Pestaña "Cobertura por PDV":** universo **completo** de puntos de venta Honor (incluye los que hoy no tienen stock), con qué modelos del catálogo (55) le faltan a cada uno. Filtra por Departamento, Canal, Estado del PDV y nombre; ordena por peor cobertura o A–Z; toca un PDV para ver el detalle de modelos faltantes agrupados en Smartphones/Accesorios.
 
 ## Alcance de los datos
 

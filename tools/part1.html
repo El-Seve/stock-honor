@@ -53,6 +53,15 @@ main{max-width:1300px;margin:auto;padding:26px 24px 12px;}
 .context h1{font-size:30px;margin:6px 0 4px;letter-spacing:-0.015em;text-wrap:balance;}
 .context .sub{color:var(--muted);font-size:13.5px;margin:0;max-width:72ch;}
 
+/* ===== View tabs (Consulta / Cobertura) ===== */
+.viewtabs{display:inline-flex;gap:4px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:4px;margin-bottom:18px;}
+.viewtabs button{
+  min-height:40px;border:none;background:transparent;color:var(--muted);
+  font-family:inherit;font-size:13px;font-weight:700;padding:8px 16px;border-radius:999px;cursor:pointer;
+}
+.viewtabs button.active{background:var(--blueSoft);color:#2f527a;}
+[hidden]{display:none!important;}
+
 /* ===== KPI cards ===== */
 .kpis{
   display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
@@ -152,6 +161,41 @@ td.num,th.num{text-align:right;}
   padding:1px 7px;border-radius:6px;vertical-align:middle;
 }
 
+/* ===== Cobertura (PDVs sin stock / modelos faltantes) ===== */
+.cov-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
+.cov-filters .field{display:flex;flex-direction:column;gap:6px;}
+.cov-filters label{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+.cov-filters select,.cov-filters input[type="text"]{
+  width:100%;min-height:44px;border:1px solid var(--border);background:#fff;color:var(--graph);
+  border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-weight:600;font-family:inherit;
+}
+.cov-filters select{cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236a747b' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;}
+.cov-filters select.set,.cov-filters input.set{border-color:var(--blue);background-color:#fbfdff;}
+.sort-toggle{display:inline-flex;gap:4px;background:var(--warm);border:1px solid var(--border);border-radius:999px;padding:3px;}
+.sort-toggle button{min-height:34px;border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;cursor:pointer;}
+.sort-toggle button.active{background:#fff;color:var(--graph);box-shadow:0 1px 3px #39434a1a;}
+.estado-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.02em;white-space:nowrap;}
+.estado-chip.op{background:#e7f3ea;color:#3a7a52;}
+.estado-chip.no-op{background:#f7e6e2;color:#a34936;}
+.estado-chip .dotc{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;}
+.cov-row{cursor:pointer;}
+.cov-row:hover{background:#fbfaf6;}
+.cov-row td{padding:10px 14px;}
+.cov-bar-cell{display:flex;align-items:center;gap:10px;justify-content:flex-end;}
+.cov-frac{font-weight:800;min-width:52px;text-align:right;white-space:nowrap;}
+.cov-track{width:88px;height:8px;border-radius:999px;background:#edf0f1;overflow:hidden;flex:none;}
+.cov-fill{height:100%;border-radius:999px;}
+.cov-chev{color:var(--muted);transition:transform .15s;flex:none;}
+.cov-row[aria-expanded="true"] .cov-chev{transform:rotate(90deg);}
+.cov-detail td{padding:0 14px 16px;border-bottom:1px solid var(--border);background:#fbfaf6;}
+.cov-detail .miss-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;padding-top:4px;}
+.cov-detail .miss-group h4{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:800;}
+.cov-detail .miss-list{display:flex;flex-wrap:wrap;gap:6px;}
+.cov-detail .miss-list span{background:#fff;border:1px solid var(--border);border-radius:8px;padding:4px 9px;font-size:12px;color:var(--graph);}
+.cov-detail .miss-empty{color:var(--muted);font-size:12.5px;font-style:italic;}
+
 /* Empty / states */
 .empty-state{
   border:1px dashed var(--border);border-radius:var(--radius-sm);
@@ -200,50 +244,105 @@ footer .isbadge{display:inline-block;padding:4px 10px;border-radius:999px;backgr
     <p class="sub">Smartphones y accesorios Honor nuevos &middot; filtra en cascada y comparte por WhatsApp.</p>
   </div>
 
-  <section class="kpis" id="statsRow" aria-label="Resumen de stock"></section>
+  <div class="viewtabs" role="tablist" aria-label="Vista">
+    <button type="button" id="tabConsultaBtn" class="active" role="tab" aria-selected="true">Consulta de stock</button>
+    <button type="button" id="tabCoberturaBtn" role="tab" aria-selected="false">Cobertura por PDV</button>
+  </div>
 
-  <section class="panel" aria-label="Filtros">
-    <div class="panel-head">
-      <h2>Filtrar en cascada</h2>
-      <button type="button" class="reset" id="resetFilters">Limpiar selecci&oacute;n</button>
-    </div>
-    <div class="cascade" id="cascade">
-      <div class="field">
-        <label for="familiaFilter"><span class="step">1</span> Familia</label>
-        <select id="familiaFilter"><option value="">Todas</option></select>
-      </div>
-      <div class="field">
-        <label for="deptoFilter"><span class="step">2</span> Departamento</label>
-        <select id="deptoFilter"><option value="">Todos</option></select>
-      </div>
-      <div class="field">
-        <label for="canalFilter"><span class="step">3</span> Canal</label>
-        <select id="canalFilter"><option value="">Todos</option></select>
-      </div>
-      <div class="field">
-        <label for="pdvFilter"><span class="step">4</span> Punto de venta</label>
-        <select id="pdvFilter"><option value="">Todos</option></select>
-      </div>
-      <div class="field">
-        <label for="modeloFilter"><span class="step">5</span> Modelo</label>
-        <select id="modeloFilter"><option value="">Todos</option></select>
-      </div>
-    </div>
-  </section>
+  <div id="viewConsulta">
+    <section class="kpis" id="statsRow" aria-label="Resumen de stock"></section>
 
-  <section class="panel" aria-label="Resultados">
-    <div class="results-head">
-      <h2 id="resultsTitle">Stock Honor &mdash; todos los puntos de venta</h2>
-      <div class="results-actions">
-        <span class="count" id="resultsCount"></span>
-        <button type="button" class="export-btn" id="shareBtn" disabled>
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="#25D366" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.29-1.39a9.9 9.9 0 0 0 4.7 1.2h.01c5.46 0 9.9-4.45 9.9-9.9 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm5.8 14.1c-.24.68-1.4 1.32-1.93 1.37-.5.05-.98.25-3.3-.68-2.8-1.12-4.62-3.98-4.76-4.16-.14-.19-1.14-1.52-1.14-2.9 0-1.37.72-2.04.97-2.32.25-.28.55-.34.73-.34.19 0 .37 0 .53.01.17.01.4-.06.62.48.24.58.81 2 .88 2.15.07.14.12.31.02.5-.1.19-.15.31-.29.48-.15.17-.31.38-.44.51-.15.15-.3.31-.13.6.17.29.75 1.25 1.62 2.02 1.12.99 2.06 1.31 2.35 1.46.29.15.46.12.63-.07.17-.19.72-.85.92-1.14.19-.29.38-.24.63-.14.26.1 1.65.78 1.93.92.29.14.48.21.55.33.07.12.07.68-.17 1.36z"/></svg>
-          Compartir en WhatsApp
-        </button>
+    <section class="panel" aria-label="Filtros">
+      <div class="panel-head">
+        <h2>Filtrar en cascada</h2>
+        <button type="button" class="reset" id="resetFilters">Limpiar selecci&oacute;n</button>
       </div>
-    </div>
-    <div id="resultsArea"></div>
-  </section>
+      <div class="cascade" id="cascade">
+        <div class="field">
+          <label for="familiaFilter"><span class="step">1</span> Familia</label>
+          <select id="familiaFilter"><option value="">Todas</option></select>
+        </div>
+        <div class="field">
+          <label for="deptoFilter"><span class="step">2</span> Departamento</label>
+          <select id="deptoFilter"><option value="">Todos</option></select>
+        </div>
+        <div class="field">
+          <label for="canalFilter"><span class="step">3</span> Canal</label>
+          <select id="canalFilter"><option value="">Todos</option></select>
+        </div>
+        <div class="field">
+          <label for="pdvFilter"><span class="step">4</span> Punto de venta</label>
+          <select id="pdvFilter"><option value="">Todos</option></select>
+        </div>
+        <div class="field">
+          <label for="modeloFilter"><span class="step">5</span> Modelo</label>
+          <select id="modeloFilter"><option value="">Todos</option></select>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Resultados">
+      <div class="results-head">
+        <h2 id="resultsTitle">Stock Honor &mdash; todos los puntos de venta</h2>
+        <div class="results-actions">
+          <span class="count" id="resultsCount"></span>
+          <button type="button" class="export-btn" id="shareBtn" disabled>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="#25D366" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.29-1.39a9.9 9.9 0 0 0 4.7 1.2h.01c5.46 0 9.9-4.45 9.9-9.9 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm5.8 14.1c-.24.68-1.4 1.32-1.93 1.37-.5.05-.98.25-3.3-.68-2.8-1.12-4.62-3.98-4.76-4.16-.14-.19-1.14-1.52-1.14-2.9 0-1.37.72-2.04.97-2.32.25-.28.55-.34.73-.34.19 0 .37 0 .53.01.17.01.4-.06.62.48.24.58.81 2 .88 2.15.07.14.12.31.02.5-.1.19-.15.31-.29.48-.15.17-.31.38-.44.51-.15.15-.3.31-.13.6.17.29.75 1.25 1.62 2.02 1.12.99 2.06 1.31 2.35 1.46.29.15.46.12.63-.07.17-.19.72-.85.92-1.14.19-.29.38-.24.63-.14.26.1 1.65.78 1.93.92.29.14.48.21.55.33.07.12.07.68-.17 1.36z"/></svg>
+            Compartir en WhatsApp
+          </button>
+        </div>
+      </div>
+      <div id="resultsArea"></div>
+    </section>
+  </div>
+
+  <div id="viewCobertura" hidden>
+    <section class="kpis" id="covStatsRow" aria-label="Resumen de cobertura"></section>
+
+    <section class="panel" aria-label="Filtros de cobertura">
+      <div class="panel-head">
+        <h2>Filtrar puntos de venta</h2>
+        <button type="button" class="reset" id="covResetFilters">Limpiar selecci&oacute;n</button>
+      </div>
+      <div class="cov-filters" id="covFilters">
+        <div class="field">
+          <label for="covSearch">Buscar PDV</label>
+          <input type="text" id="covSearch" placeholder="Nombre del punto de venta&hellip;" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="covDeptoFilter">Departamento</label>
+          <select id="covDeptoFilter"><option value="">Todos</option></select>
+        </div>
+        <div class="field">
+          <label for="covCanalFilter">Canal</label>
+          <select id="covCanalFilter"><option value="">Todos</option></select>
+        </div>
+        <div class="field">
+          <label for="covEstadoFilter">Estado del PDV</label>
+          <select id="covEstadoFilter">
+            <option value="">Todos</option>
+            <option value="OPERATIVO">Operativo</option>
+            <option value="NO OPERATIVO">No operativo</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Cobertura por punto de venta">
+      <div class="results-head">
+        <h2 id="covResultsTitle">Cobertura de modelos por punto de venta</h2>
+        <div class="results-actions">
+          <span class="count" id="covResultsCount"></span>
+          <div class="sort-toggle" role="tablist" aria-label="Ordenar">
+            <button type="button" id="covSortWorstBtn" class="active">Peor cobertura primero</button>
+            <button type="button" id="covSortAzBtn">A&ndash;Z</button>
+          </div>
+        </div>
+      </div>
+      <p class="sub" style="margin:-4px 0 14px;">Universo completo de PDV Honor (incluye tiendas sin stock actual). Toca un punto de venta para ver qu&eacute; modelos le faltan.</p>
+      <div id="covResultsArea"></div>
+    </section>
+  </div>
 </main>
 
 <footer>
