@@ -163,88 +163,12 @@ try {
         $stockArr.Add(@([int]$parts[0], [int]$parts[1], $kv.Value))
     }
 
-    # ---- Pass 3: Cobertura - TODOS los PDV Honor (universo completo) x que modelos tienen ----
-    # Universo: cualquier fila con MARCA=Honor, sin exigir Disponible/Operativo/Estado/Uso
-    # (asi tambien aparecen tiendas cerradas o sin stock vendible). "Tiene" un modelo usa
-    # la MISMA definicion de disponibilidad que el resto del panel (RowPasses).
-    $modelSeen = @{}
-    $modelListRaw = New-Object System.Collections.Generic.List[object]
-    foreach ($p in $productList) {
-        $mk = $p.modelo.ToLowerInvariant()
-        if (-not $modelSeen.ContainsKey($mk)) {
-            $modelSeen[$mk] = $true
-            $modelListRaw.Add([PSCustomObject]@{ modelo = $p.modelo; familia = $p.familia })
-        }
-    }
-    $modelListOrdered = New-Object System.Collections.Generic.List[object]
-    $modelIndex = @{}
-    foreach ($m in ($modelListRaw | Sort-Object @{Expression={ if ($_.familia -eq 'Moviles') { 0 } else { 1 } }}, modelo)) {
-        $modelListOrdered.Add($m)
-        $modelIndex[$m.modelo.ToLowerInvariant()] = $modelListOrdered.Count - 1
-    }
-
-    $univIndex = @{}   # pdv(lower) -> idx
-    $univList = New-Object System.Collections.Generic.List[object]
-    for ($r = 2; $r -le $rows; $r++) {
-        if ((TrimStr $data[$r, $COL_MARCA]).ToLowerInvariant() -ne $marcaAllowedLower) { continue }
-        $pdvU = TrimStr $data[$r, $COL_PDV]
-        if ($pdvU -eq "") { continue }
-        $ukey = $pdvU.ToLowerInvariant()
-        if (-not $univIndex.ContainsKey($ukey)) {
-            $uobj = [PSCustomObject]@{
-                pdv = $pdvU
-                ubicacion = TrimStr $data[$r, $COL_UBIC]
-                departamento = TrimStr $data[$r, $COL_DEPTO]
-                canal = TrimStr $data[$r, $COL_CANAL]
-                estadoPdv = TrimStr $data[$r, $COL_ESTADOPDV]
-            }
-            $univList.Add($uobj)
-            $univIndex[$ukey] = $univList.Count - 1
-        }
-    }
-
-    $have = New-Object 'System.Collections.Generic.Dictionary[int,System.Collections.Generic.HashSet[int]]'
-    for ($r = 2; $r -le $rows; $r++) {
-        if (-not (RowPasses $r)) { continue }
-        $pdvU = TrimStr $data[$r, $COL_PDV]
-        if ($pdvU -eq "") { continue }
-        $ukey = $pdvU.ToLowerInvariant()
-        if (-not $univIndex.ContainsKey($ukey)) { continue }
-        $uIdx = $univIndex[$ukey]
-        $mKey = (Norm $mapModelo $data[$r, $COL_MARCAMODELO]).ToLowerInvariant()
-        if (-not $modelIndex.ContainsKey($mKey)) { continue }
-        $mIdx = $modelIndex[$mKey]
-        if (-not $have.ContainsKey($uIdx)) { $have[$uIdx] = New-Object 'System.Collections.Generic.HashSet[int]' }
-        [void]$have[$uIdx].Add($mIdx)
-    }
-
-    $coveragePdvs = New-Object System.Collections.Generic.List[object]
-    for ($i = 0; $i -lt $univList.Count; $i++) {
-        $u = $univList[$i]
-        $haveArr = @()
-        if ($have.ContainsKey($i)) { $haveArr = @($have[$i] | Sort-Object) }
-        $cobj = [PSCustomObject]@{
-            pdv = $u.pdv
-            ubicacion = $u.ubicacion
-            departamento = $u.departamento
-            canal = $u.canal
-            estadoPdv = $u.estadoPdv
-            have = $haveArr
-        }
-        $coveragePdvs.Add($cobj)
-    }
-    Write-Output "Cobertura: modelos=$($modelListOrdered.Count) universo PDV=$($coveragePdvs.Count)"
-
     $result = [PSCustomObject]@{
         periodo = $periodo
         dia = $dia
         products = $productList
         pdvs = $pdvList
         stock = $stockArr
-        coverage = [PSCustomObject]@{
-            models = $modelListOrdered
-            pdvs = $coveragePdvs
-        }
     }
 
     $json = $result | ConvertTo-Json -Depth 6 -Compress
