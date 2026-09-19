@@ -29,22 +29,24 @@ Generado desde la pestaña **Base Stocks** del Excel Honor (Oracle). Filtros de 
 
 ## Cómo actualizar (cada nuevo Excel)
 
-Los datos son una foto fija; para refrescarlos hay que regenerar `index.html` y hacer push.
+Los datos son una foto fija; se refrescan con **un solo llamado** (requiere Excel instalado, usa COM):
 
-1. Coloca el nuevo `.xlsb` y ajusta la ruta en `tools/extract.ps1` (parámetro `-Path`).
-2. Ejecuta el generador (requiere Excel instalado — usa COM):
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File tools/extract.ps1
-   powershell -ExecutionPolicy Bypass -File tools/build_standalone.ps1
-   ```
-   `extract.ps1` filtra y agrega el stock a `stock_data.json`; `build_standalone.ps1` ensambla `index.html`.
-3. Commit + push a `main`. GitHub Pages se actualiza en ~1 minuto.
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/actualizar_stock.ps1 -Path "C:/ruta/archivo.xlsb"
+```
+
+O arrastra el archivo `.xlsb`/`.xlsx` sobre `tools/actualizar_stock.cmd`.
+
+El script: valida el archivo (hoja Base Stocks y 39 columnas), extrae y filtra a Honor, verifica los datos contra lo publicado (aborta si el corte es más antiguo o las cifras son muy distintas), ensambla `index.html`, hace commit + push a `main`, espera el despliegue de GitHub Pages y confirma que la página en vivo coincide. Tarda ~1 min.
+
+Opciones: `-DryRun` (todo salvo publicar), `-Force` (salta las guardas).
 
 ## Estructura
 
 | Archivo | Rol |
 |---|---|
 | `index.html` | App completa (datos incrustados). Servido por GitHub Pages. |
-| `tools/extract.ps1` | Lee el Excel (pestaña Base Stocks) y genera `stock_data.json`. |
+| `tools/actualizar_stock.ps1` / `.cmd` | **Un solo llamado**: extrae, verifica, ensambla, publica y confirma el despliegue. |
+| `tools/extract.ps1` | Lee la pestaña Base Stocks (solo las columnas necesarias) y genera `stock_data.json` con procesamiento en C# (segundos). |
 | `tools/build_standalone.ps1` | Ensambla `index.html` a partir de las plantillas + datos. |
 | `tools/part1.html`, `tools/part2.html` | Plantillas de estilo/markup y de lógica. |

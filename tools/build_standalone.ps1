@@ -18,7 +18,7 @@ $headInner = $part1.Substring(0, $idx + $marker.Length)   # includes <title>, <s
 $bodyInner = $part1.Substring($idx + $marker.Length)        # the <div class="wrap">... markup
 
 # bodyInner already ends with the opening `<script id="stock-data" ...>` tag (from part1),
-# and part2.html begins with the matching `</script>` — so concatenate bodyInner + data + part2
+# and part2.html begins with the matching `</script>` - so concatenate bodyInner + data + part2
 # exactly like the Claude-artifact build, just wrapped in a proper head/body skeleton.
 $sb = New-Object System.Text.StringBuilder
 [void]$sb.AppendLine('<!doctype html>')

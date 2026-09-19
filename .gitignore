@@ -1,3 +1,4 @@
 serve_test.ps1
 stock_data.json
 *.xlsb
+*.xlsx
