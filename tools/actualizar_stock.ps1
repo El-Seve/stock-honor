@@ -169,7 +169,7 @@ try {
 
     # 5. ensamblar y verificar el HTML
     $outHtml = if ($DryRun) { Join-Path $Work "index_dryrun.html" } else { $IndexPath }
-    & (Join-Path $Tools "build_standalone.ps1") -OutFile $outHtml | Out-Null
+    & (Join-Path $Tools "build_standalone.ps1") -OutFile $outHtml -JsonFile $JsonPath | Out-Null
     $html = [System.IO.File]::ReadAllText($outHtml)
     $emb = Get-EmbeddedJson $html
     if (-not $emb) { throw "El HTML generado no contiene el bloque de datos." }

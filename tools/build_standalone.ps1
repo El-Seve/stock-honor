@@ -2,12 +2,14 @@
 # from part1.html (title+style+body), stock_data.json, and part2.html (scripts).
 param(
     [string]$Dir = $PSScriptRoot,
-    [string]$OutFile = (Join-Path $PSScriptRoot "..\index.html")
+    [string]$OutFile = (Join-Path $PSScriptRoot "..\index.html"),
+    [string]$JsonFile = ""      # por defecto <Dir>\stock_data.json
 )
 $ErrorActionPreference = "Stop"
+if (-not $JsonFile) { $JsonFile = Join-Path $Dir "stock_data.json" }
 
 $part1 = [System.IO.File]::ReadAllText((Join-Path $Dir "part1.html"))
-$data  = [System.IO.File]::ReadAllText((Join-Path $Dir "stock_data.json"))
+$data  = [System.IO.File]::ReadAllText($JsonFile)
 $part2 = [System.IO.File]::ReadAllText((Join-Path $Dir "part2.html"))
 
 # Split part1 at the end of </style>: head goes to <head>, the rest (body markup) to <body>.
