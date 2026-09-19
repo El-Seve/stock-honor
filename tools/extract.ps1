@@ -281,7 +281,7 @@ public static class StockExtractor
             {
                 int ga = (a[1] == "Moviles") ? 0 : 1, gb = (b[1] == "Moviles") ? 0 : 1;
                 if (ga != gb) return ga.CompareTo(gb);
-                return string.Compare(a[0], b[0], StringComparison.CurrentCultureIgnoreCase);
+                return string.Compare(a[0], b[0], StringComparison.OrdinalIgnoreCase);
             });
             Dictionary<string, int> modelIndex = new Dictionary<string, int>();
             for (int i = 0; i < models.Count; i++) modelIndex[models[i][0].ToLowerInvariant()] = i;

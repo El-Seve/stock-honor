@@ -17,7 +17,8 @@
 #
 # NOTA: mantener este archivo en ASCII puro (PowerShell 5.1 lee .ps1 sin BOM como ANSI).
 param(
-    [Parameter(Mandatory = $true, Position = 0)][string]$Path,
+    [Parameter(Position = 0)][string]$Path = "",   # Excel a procesar (local, con Excel instalado)
+    [string]$InputJson = "",                        # alternativa: stock_data.json ya extraido (lo usa la Action en la nube)
     [switch]$DryRun,
     [switch]$Force,
     [switch]$Coverage,
@@ -35,7 +36,7 @@ $Live      = "https://el-seve.github.io/stock-honor/"
 $Short     = "https://tinyurl.com/Consulta-Stock-Honor"
 $JsonPath  = Join-Path $Tools "stock_data.json"
 $IndexPath = Join-Path $Repo "index.html"
-$Work      = Join-Path $env:TEMP "stock_honor_work"
+$Work      = Join-Path ([System.IO.Path]::GetTempPath()) "stock_honor_work"
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
 
 # ---------------------------------------------------------------- utilidades
@@ -103,9 +104,17 @@ try {
     if ($DryRun) { Write-Host "(modo DryRun: no se toca el repo ni se publica nada)" }
 
     # 1. guardas previas
-    if (-not (Test-Path -LiteralPath $Path)) { throw "No existe el archivo: $Path" }
-    foreach ($f in @("part1.html", "part2.html", "extract.ps1", "build_standalone.ps1")) {
-        if (-not (Test-Path -LiteralPath (Join-Path $Tools $f))) { throw "Falta tools\$f en el repo." }
+    if ($InputJson) {
+        if (-not (Test-Path -LiteralPath $InputJson)) { throw "No existe el JSON de datos: $InputJson" }
+    }
+    else {
+        if (-not $Path) { throw "Indica -Path <archivo Excel> (o -InputJson <stock_data.json>)." }
+        if (-not (Test-Path -LiteralPath $Path)) { throw "No existe el archivo: $Path" }
+    }
+    $required = @("part1.html", "part2.html", "build_standalone.ps1")
+    if (-not $InputJson) { $required += "extract.ps1" }
+    foreach ($f in $required) {
+        if (-not (Test-Path -LiteralPath (Join-Path $Tools $f))) { throw "Falta tools/$f en el repo." }
     }
     [void](Invoke-Git rev-parse --is-inside-work-tree)
     $branch = (Invoke-Git branch --show-current) -join ""
@@ -123,19 +132,28 @@ try {
     try { $liveBefore = Get-LiveSummary } catch { Write-Host ("  AVISO: no pude leer lo publicado ({0}); sigo sin comparar." -f $_.Exception.Message) }
     if ($liveBefore) { Step ("Publicado hoy: corte {0}, {1:n0} u." -f $liveBefore.Label, $liveBefore.UnitsAll) }
 
-    # 2. copia de trabajo (evita el bloqueo si el archivo esta abierto en Excel)
     if (Test-Path -LiteralPath $Work) { Remove-Item -LiteralPath $Work -Recurse -Force -ErrorAction SilentlyContinue }
     New-Item -ItemType Directory -Force -Path $Work | Out-Null
-    $tmp = Join-Path $Work ("bd_corte" + [System.IO.Path]::GetExtension($Path))
-    Copy-Item -LiteralPath $Path -Destination $tmp -Force
-    Step ("Copia de trabajo lista ({0:n1} MB)" -f ((Get-Item -LiteralPath $tmp).Length / 1MB))
 
-    # 3. extraer datos
-    & (Join-Path $Tools "extract.ps1") -Path $tmp -OutJson $JsonPath -Coverage:$needCov
-    Step "Datos extraidos"
+    if ($InputJson) {
+        # datos ya extraidos por otro extractor (p. ej. Python en la nube)
+        $JsonPath = (Resolve-Path -LiteralPath $InputJson).Path
+        Step ("Usando datos ya extraidos: {0}" -f $JsonPath)
+    }
+    else {
+        # 2. copia de trabajo (evita el bloqueo si el archivo esta abierto en Excel)
+        $tmp = Join-Path $Work ("bd_corte" + [System.IO.Path]::GetExtension($Path))
+        Copy-Item -LiteralPath $Path -Destination $tmp -Force
+        Step ("Copia de trabajo lista ({0:n1} MB)" -f ((Get-Item -LiteralPath $tmp).Length / 1MB))
+
+        # 3. extraer datos
+        & (Join-Path $Tools "extract.ps1") -Path $tmp -OutJson $JsonPath -Coverage:$needCov
+        Step "Datos extraidos"
+    }
 
     # 4. verificar datos y comparar con lo publicado
     $local = Get-Summary (Get-Content -LiteralPath $JsonPath -Raw)
+    if ($needCov -and -not $local.HasCoverage) { throw "La plantilla usa el bloque 'coverage' pero los datos no lo traen. Re-extrae con cobertura." }
     if ($local.UnitsAll -le 0 -or $local.PdvAll -le 0 -or $local.ModelsAll -le 0) { throw "El resultado quedo vacio (0 unidades/PDV/modelos). Revisa el archivo." }
     Step ("Corte {0}: {1:n0} u., {2} modelos, {3} PDV" -f $local.Label, $local.UnitsAll, $local.ModelsAll, $local.PdvAll)
     if ($liveBefore) {
@@ -163,6 +181,7 @@ try {
         $same = ($liveBefore -and $liveBefore.Fingerprint -eq $local.Fingerprint)
         Show-Table $local
         Write-Host ("DryRun OK. Coincide con lo publicado: {0}" -f $(if ($same) { "SI" } else { "NO (habria cambios)" }))
+        Write-Host ("Huella de datos: {0}" -f $local.Fingerprint)
         Write-Host ("Tiempo total: {0:n0} s" -f $sw.Elapsed.TotalSeconds)
         return
     }
@@ -203,6 +222,7 @@ try {
     Write-Host ("=== LISTO: corte {0} publicado ===" -f $local.Label)
     Show-Table $local
     Write-Host ("En vivo: {0}   (corto: {1})" -f $Live, $Short)
+    Write-Host ("Huella de datos: {0}" -f $local.Fingerprint)
     Write-Host ("Tiempo total: {0:n0} s" -f $sw.Elapsed.TotalSeconds)
 }
 catch {
