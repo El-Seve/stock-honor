@@ -23,6 +23,7 @@ param(
     [switch]$Force,
     [switch]$Coverage,
     [string]$Trailer = "",
+    [string]$LiveUrl = "https://el-seve.github.io/stock-honor/",   # solo para pruebas
     [int]$DeployTimeoutSec = 300
 )
 
@@ -32,7 +33,7 @@ function Step($m) { Write-Host ("[{0,5:n1}s] {1}" -f $sw.Elapsed.TotalSeconds, $
 
 $Tools     = $PSScriptRoot
 $Repo      = Split-Path -Parent $Tools
-$Live      = "https://el-seve.github.io/stock-honor/"
+$Live      = $LiveUrl
 $Short     = "https://tinyurl.com/Consulta-Stock-Honor"
 $JsonPath  = Join-Path $Tools "stock_data.json"
 $IndexPath = Join-Path $Repo "index.html"
@@ -129,8 +130,11 @@ try {
 
     # lo publicado hoy (para comparar); si no hay red, se sigue con aviso
     $liveBefore = $null
-    try { $liveBefore = Get-LiveSummary } catch { Write-Host ("  AVISO: no pude leer lo publicado ({0}); sigo sin comparar." -f $_.Exception.Message) }
+    $liveErr = ""
+    try { $liveBefore = Get-LiveSummary } catch { $liveErr = $_.Exception.Message }
     if ($liveBefore) { Step ("Publicado hoy: corte {0}, {1:n0} u." -f $liveBefore.Label, $liveBefore.UnitsAll) }
+    elseif ($DryRun -or $Force) { Write-Host ("  AVISO: no pude leer lo publicado ({0}); sigo sin comparar." -f $liveErr) }
+    else { throw ("No pude leer lo publicado para comparar (red o GitHub Pages: {0}). Sin esa comparacion no se publica; reintenta en un momento o usa -Force." -f $liveErr) }
 
     if (Test-Path -LiteralPath $Work) { Remove-Item -LiteralPath $Work -Recurse -Force -ErrorAction SilentlyContinue }
     New-Item -ItemType Directory -Force -Path $Work | Out-Null
